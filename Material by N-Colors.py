@@ -7,7 +7,7 @@ bl_info = {
     "version" : (1, 0, 0),
     "location" : "节点编辑器>工具>Material by N-Colors",
     "warning" : "",
-    "doc_url": "", 
+    "doc_url": "https://space.bilibili.com/2711518?spm_id_from=333.788.0.0", 
     "tracker_url": "", 
     "category" : "Material" 
 }
