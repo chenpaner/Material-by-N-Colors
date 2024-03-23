@@ -147,7 +147,21 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(bpy.types.Panel):
         row_61394.label(text='', icon_value=580)
         row_61394.prop(bpy.context.scene, 'sna_cp_custom_colors', text='', icon_value=0, emboss=True)
 
-        op = layout.operator('sna.operator_285d0', text='Add ', icon="ADD", emboss=True, depress=False)
+        row = layout.row(heading='', align=True)
+        row.scale_y = 1.0
+        icon="ADD"
+        all_objects = bpy.context.scene.objects
+        objects_with_active_material = []
+        for obj in all_objects:
+            if any(slot.material == bpy.context.object.active_material for slot in obj.material_slots):
+                objects_with_active_material.append(obj)
+        for obj in objects_with_active_material:
+            if "CP Custom colors" not in obj:
+                row.alert = True
+                icon="FILE_REFRESH"
+                row.scale_y = 2.0
+
+        row.operator('sna.operator_285d0', text='Add ', icon=icon, emboss=True, depress=False)
 
 def sna_update_sna_cp_custom_colors_C1A81(self, context):
     new_color = self.sna_cp_custom_colors
