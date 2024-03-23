@@ -121,7 +121,10 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(bpy.types.Panel):
     def poll(cls, context):
         world = context.scene.world
         data=context.space_data
-        return  data.tree_type == "ShaderNodeTree" and data.node_tree != world.node_tree and data.edit_tree 
+        if data and data.tree_type == "ShaderNodeTree" and data.edit_tree:
+            if data.node_tree != world.node_tree:
+                return True
+        return False
 
     def draw_header(self, context):
         layout = self.layout
