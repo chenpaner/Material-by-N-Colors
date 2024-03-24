@@ -122,7 +122,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(bpy.types.Panel):
         world = context.scene.world
         data=context.space_data
         if data and data.tree_type == "ShaderNodeTree" and data.edit_tree:
-            if data.node_tree != world.node_tree:
+            if data.node_tree and data.node_tree != world.node_tree:
                 return True
         return False
 
