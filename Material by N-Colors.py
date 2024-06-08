@@ -17,6 +17,22 @@ import bpy
 import math
 import random
 from bpy.app.handlers import persistent
+from bpy.types import (
+    Operator,
+    AddonPreferences,
+    GizmoGroup,
+    Panel,
+    UIList,
+    PropertyGroup,
+)
+from bpy.props import (
+    StringProperty, #字符串
+    IntProperty, #整数
+    BoolProperty, #布尔
+    FloatVectorProperty,#一个记录两个浮点数的属性
+    FloatProperty,#浮点
+    EnumProperty,#枚举列表
+    )
 
 ##插件PowerProps值得参考
 
@@ -52,7 +68,7 @@ class NODE_OT_Add_Prop_Attributenode_285D0(bpy.types.Operator):
             #if obj.type == 'MESH':
          #颜色属性
             if "CP Custom colors" not in obj:
-                obj["CP Custom colors"]= bpy.context.scene.edit_selected_objects_colors_C1A81#(1.0, 1.0, 1.0, 1.0)
+                obj["CP Custom colors"]= bpy.context.scene.Matby_N_Colors.edit_selected_objects_colors_C1A81#(1.0, 1.0, 1.0, 1.0)
                 obj.data.update()#重要东西用来刷新属性，不然颜色没用
                 #obj["CP Custom colors"]=(1.0, 0.0, 0.0)
                 #del obj["CP Custom colors"]
@@ -65,7 +81,7 @@ class NODE_OT_Add_Prop_Attributenode_285D0(bpy.types.Operator):
             ui.update(max=1.0, soft_max=1.0)
          #浮点属性
             if "CP Custom float" not in obj:
-                obj["CP Custom float"]= bpy.context.scene.edit_selected_objects_float_C0000
+                obj["CP Custom float"]= bpy.context.scene.Matby_N_Colors.edit_selected_objects_float_C0000
                 obj.data.update()
             ui = obj.id_properties_ui("CP Custom float")
             ui.update(description = "设置活动物体的浮点属性,方便多个物体同材质但不同法线高度等待")
@@ -133,6 +149,15 @@ class NODE_OT_Add_Prop_Attributenode_285D0(bpy.types.Operator):
         
         return {"FINISHED"}
 
+def update_min_max(self, context):
+    # 检查每个属性的最小值和最大值，确保最小值不大于最大值
+    for prop in ['float', 'r', 'g', 'b']:
+        min_val = getattr(self, prop + '_min')
+        max_val = getattr(self, prop + '_max')
+        if min_val > max_val:
+            setattr(self, prop + '_min', max_val)
+            setattr(self, prop + '_max', min_val)
+
 #todo 按某个色库里的颜色随机化颜色值
 class MNC_OT_randomize_property(bpy.types.Operator):
     bl_idname = 'mnc.randomize_property'
@@ -140,8 +165,157 @@ class MNC_OT_randomize_property(bpy.types.Operator):
     bl_description = 'Randomize property on all selected objects\n随机化所有选中对象的属性'
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
-    prop_name: bpy.props.StringProperty(options={'HIDDEN', 'SKIP_SAVE'})
-    seed: bpy.props.IntProperty(name='Seed', description='Seed for the random number generator')
+    prop_name: bpy.props.StringProperty(options={'HIDDEN'})
+    seed: bpy.props.IntProperty(name='Seed', description='Seed for the random number generator',options={'HIDDEN'})
+
+    # float_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
+    # float_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
+
+    # r_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
+    # r_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
+
+    # g_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
+    # g_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
+
+    # b_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
+    # b_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
+
+    float_min: bpy.props.FloatProperty(
+        name='Min',
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    float_max: bpy.props.FloatProperty(
+        name='Max',
+        default=1.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    r_min: bpy.props.FloatProperty(
+        name='Min',
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    r_max: bpy.props.FloatProperty(
+        name='Max',
+        default=1.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    g_min: bpy.props.FloatProperty(
+        name='Min',
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    g_max: bpy.props.FloatProperty(
+        name='Max',
+        default=1.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    b_min: bpy.props.FloatProperty(
+        name='Min',
+        default=0.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+    b_max: bpy.props.FloatProperty(
+        name='Max',
+        default=1.0,
+        min=0.0,
+        max=1.0,
+        step=5,
+        precision=2,
+        update=update_min_max
+    )
+
+
+
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
+
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def draw(self, context: bpy.types.Context):
+        layout = self.layout
+        if self.prop_name == "CP Custom colors":
+            # col=layout.column(align=True)
+            # rrow = col.row(align=True)
+            # rrow.label(text='', icon="EVENT_R")
+            # rrow.prop(self,"r_min",text='Min')
+            # rrow.prop(self,"r_max",text='Max')
+
+            # grow = col.row(align=True)
+            # grow.label(text='', icon="EVENT_G")
+            # grow.prop(self,"g_min",text='')
+            # grow.prop(self,"g_max",text='')
+
+            # brow = col.row(align=True)
+            # brow.label(text='', icon="EVENT_B")
+            # brow.prop(self,"b_min",text='')
+            # brow.prop(self,"b_max",text='')
+
+            col_0A252 = layout.column(heading='', align=True)
+            col_0A252.alignment = 'Expand'.upper()
+            grid_19F27 = col_0A252.grid_flow(columns=3, row_major=False, even_columns=False, even_rows=False, align=True)
+
+            grid_19F27.label(text='', icon_value=906)#R
+            grid_19F27.label(text='', icon_value=895)#G
+            grid_19F27.label(text='', icon_value=890)#B
+            row_3AD8E = col_0A252.row(heading='', align=True)
+           
+            row_3AD8E.alignment = 'Expand'.upper()
+
+            row_3AD8E.prop(self, 'r_min', text='Min', icon_value=0, emboss=True)
+            row_3AD8E.prop(self, 'g_min', text='', icon_value=0, emboss=True)
+            row_3AD8E.prop(self, 'b_min', text='', icon_value=0, emboss=True)
+            
+            row_84EA7 = col_0A252.row(heading='', align=True)      
+            row_84EA7.alignment = 'Expand'.upper()
+            row_84EA7.prop(self, 'r_max', text='Max', icon_value=0, emboss=True)
+            row_84EA7.prop(self, 'g_max', text='', icon_value=0, emboss=True)
+            row_84EA7.prop(self, 'b_max', text='', icon_value=0, emboss=True)
+
+         
+        elif self.prop_name == "CP Custom float":
+            col=layout.column(align=True)
+            rrow = col.row(align=True)
+            #rrow.label(text='',)
+            rrow.prop(self,"float_min",text='Min')
+            rrow.prop(self,"float_max",text='Max')
 
     def execute(self, context):
         objects = context.selected_objects
@@ -157,16 +331,16 @@ class MNC_OT_randomize_property(bpy.types.Operator):
                 min_val, max_val = 0.0, 1.0
                 if self.prop_name == "CP Custom colors":
                     # 随机化RGBA颜色 
-                    r = round(rand.uniform(min_val, max_val), 2)
-                    g = round(rand.uniform(min_val, max_val), 2)
-                    b = round(rand.uniform(min_val, max_val), 2)
+                    r = round(rand.uniform(self.r_min, self.r_max), 2)       
+                    g = round(rand.uniform(self.g_min, self.g_max), 2)
+                    b = round(rand.uniform(self.b_min, self.b_max), 2)
                     a = 1.0  # 设为固定值，若需要随机化可以解除注释
                     #print(r, g, b, a)
                     obj[self.prop_name]=(r, g, b, a)
                     obj.data.update()
 
                 elif self.prop_name == "CP Custom float":
-                    f = round(rand.uniform(min_val, max_val), 2)
+                    f = round(rand.uniform(self.float_min, self.float_max), 2)
                     #print(f)
                     obj[self.prop_name]= f
                     obj.data.update()
@@ -234,14 +408,15 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(bpy.types.Panel):
     bl_ui_units_x=0
 
     @classmethod
-    def poll(cls, context):
-        world = context.scene.world
-        data=context.space_data
-        # 检查是否存在节点树以及其他必要条件
-        if data and data.tree_type == "ShaderNodeTree" and data.edit_tree:
-            # 检查当前节点树是否不同于世界节点树
-            if data.node_tree and data.node_tree != world.node_tree:
-                return True
+    def poll(cls, context):###参考bl官方代码space_node.py的class NODE_HT_header(Header):
+        #data=context.space_data
+        snode = context.space_data
+        if snode.tree_type == 'ShaderNodeTree':
+        # # 检查是否存在节点树以及其他必要条件
+        # if data and data.tree_type == "ShaderNodeTree" and data.edit_tree:
+        #     # 检查当前节点树是否不同于世界节点树
+        #     if data.node_tree and data.node_tree != world.node_tree:
+            return True
         return False
         #len(bpy.context.selected_objects) > 0 and
 
@@ -261,22 +436,22 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(bpy.types.Panel):
             co=box_9C21B.column(align=True, heading='', heading_ctxt='', translate=True)
             co.label(text='设置与活动物体属性值相等的物体属性', icon_value=551)
             row_3835D = co.row(heading='', align=False)
-            row_3835D.prop(bpy.context.scene, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
+            row_3835D.prop(bpy.context.scene.Matby_N_Colors, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
             #row_3835D.label(text='选择和活动物体一样材质，并且属性的颜色一样的物体', icon_value=256)
             row_3835D.operator('sna.select_same_attribute', text='', icon_value=256, emboss=True, depress=False)
 
-            co.prop(bpy.context.scene, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
+            co.prop(bpy.context.scene.Matby_N_Colors, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
 
             box_CCCCC = layout.box()
             col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
             col.label(text='设置所有选中物体(活动物体)属性', icon="STICKY_UVS_LOC")
             row_D = col.row(heading='', align=False)
-            row_D.prop(bpy.context.scene, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
+            row_D.prop(bpy.context.scene.Matby_N_Colors, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
             op=row_D.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
             op.prop_name="CP Custom colors"
 
             row_E = col.row(heading='', align=False)
-            row_E.prop(bpy.context.scene, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
+            row_E.prop(bpy.context.scene.Matby_N_Colors, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
             op=row_E.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
             op.prop_name="CP Custom float"
 
@@ -298,7 +473,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(bpy.types.Panel):
                 break  # 只要有一个满足条件就停止循环
 
         row.operator('node.add_prop_and_attributenode_285d0', text=tex, icon=icon, emboss=True, depress=False)
-        #少个选中所有使用该材质的物体操作符
+       
  
 ##############       
 def get_active_object_color(self):
@@ -434,8 +609,9 @@ def set_edit_same_float_as_active_object__C0000(self, value):
         active_object["CP Custom float"] = new_color
         active_object.data.update()#重要东西用来刷新属性，不然颜色没用
 
-def register():
-    bpy.types.Scene.edit_selected_objects_colors_C1A81 = bpy.props.FloatVectorProperty(
+# 所有场景属性汇总---------------------------------------------------- #
+class Materialby_N_Colors_props(PropertyGroup):
+    edit_selected_objects_colors_C1A81 :FloatVectorProperty(
         name='Sets the property color of all selected objects', description='设置所有选中物体(活动物体)的属性颜色', 
         size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=3, precision=2, 
         get=get_active_object_color,
@@ -443,7 +619,7 @@ def register():
         #update=update_edit_selected_objects_colors_C1A81
         )
 
-    bpy.types.Scene.edit_same_color_as_active_object_B2B90 = bpy.props.FloatVectorProperty(
+    edit_same_color_as_active_object_B2B90 :FloatVectorProperty(
         name='Also adjust the attribute color of the same attribute color as the active object',
         description='调整与活动物体同色的物体属性颜色',
         size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=5, precision=2, 
@@ -452,43 +628,84 @@ def register():
         #update=update_active_color,
     )
 
-    bpy.types.Scene.edit_selected_objects_float_C0000 = bpy.props.FloatProperty(
+    edit_selected_objects_float_C0000 :FloatProperty(
         name="Float",description="Edit selected objects float",default=0.5,min=0.0, max=1.0, step=5, precision=2,
         get=get_active_object_float,
         set=set_edit_selected_objects_float_C0000,
         )
     
-    bpy.types.Scene.edit_same_float_as_active_object__C0000 = bpy.props.FloatProperty(
+    edit_same_float_as_active_object__C0000 :FloatProperty(
         name="Float",description="Edit same float as active object",default=0.5,min=0.0, max=1.0, step=3, precision=2,
         get=get_active_object_float,
         set=set_edit_same_float_as_active_object__C0000,
         )
 
-    #bpy.app.handlers.depsgraph_update_post.append(get_edit_same_color_as_active_object_B2B90)#多余了用get了
+classes = (
+    NODE_OT_Add_Prop_Attributenode_285D0,
+    MNC_OT_randomize_property,
+    #SNA_OT_Operator001_D53F7,
+    SNA_OT_SelectObjectsWithSameAttribute,
+    SNA_PT_MATERIAL_BY_NCOLORS_85AF2,
 
-    #bpy.types.Scene.shoud_refresh_color = bpy.props.BoolProperty(name = "", description = "", default = False)
+    Materialby_N_Colors_props,##所有场景属性汇总
+    
+)
 
-    bpy.utils.register_class(NODE_OT_Add_Prop_Attributenode_285D0)
-    bpy.utils.register_class(MNC_OT_randomize_property)
-    #bpy.utils.register_class(SNA_OT_Operator001_D53F7)
-    bpy.utils.register_class(SNA_OT_SelectObjectsWithSameAttribute)
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
-    bpy.utils.register_class(SNA_PT_MATERIAL_BY_NCOLORS_85AF2)
+    ##注意这个要在所有class注册后，也就是它的type注册后再注册这个 所有场景属性汇总
+    bpy.types.Scene.Matby_N_Colors = bpy.props.PointerProperty(name = "HDRLight main prop",type=Materialby_N_Colors_props)
+
+
+        # bpy.types.Scene.edit_selected_objects_colors_C1A81 = bpy.props.FloatVectorProperty(
+        #     name='Sets the property color of all selected objects', description='设置所有选中物体(活动物体)的属性颜色', 
+        #     size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=3, precision=2, 
+        #     get=get_active_object_color,
+        #     set=set_edit_selected_objects_colors_C1A81,
+        #     #update=update_edit_selected_objects_colors_C1A81
+        #     )
+
+        # bpy.types.Scene.edit_same_color_as_active_object_B2B90 = bpy.props.FloatVectorProperty(
+        #     name='Also adjust the attribute color of the same attribute color as the active object',
+        #     description='调整与活动物体同色的物体属性颜色',
+        #     size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=5, precision=2, 
+        #     get=get_active_object_color,
+        #     set=set_edit_same_color_as_active_object_B2B90,
+        #     #update=update_active_color,
+        # )
+
+        # bpy.types.Scene.edit_selected_objects_float_C0000 = bpy.props.FloatProperty(
+        #     name="Float",description="Edit selected objects float",default=0.5,min=0.0, max=1.0, step=5, precision=2,
+        #     get=get_active_object_float,
+        #     set=set_edit_selected_objects_float_C0000,
+        #     )
+        
+        # bpy.types.Scene.edit_same_float_as_active_object__C0000 = bpy.props.FloatProperty(
+        #     name="Float",description="Edit same float as active object",default=0.5,min=0.0, max=1.0, step=3, precision=2,
+        #     get=get_active_object_float,
+        #     set=set_edit_same_float_as_active_object__C0000,
+        #     )
+
+        # #bpy.app.handlers.depsgraph_update_post.append(get_edit_same_color_as_active_object_B2B90)#多余了用get了
+
+        # #bpy.types.Scene.shoud_refresh_color = bpy.props.BoolProperty(name = "", description = "", default = False)
 
 
 def unregister():
-    del bpy.types.Scene.edit_selected_objects_colors_C1A81
-    del bpy.types.Scene.edit_same_color_as_active_object_B2B90
-    del bpy.types.Scene.edit_selected_objects_float_C0000
-    del bpy.types.Scene.edit_same_float_as_active_object__C0000
-    #bpy.app.handlers.depsgraph_update_post.remove(get_edit_same_color_as_active_object_B2B90)
+    for cls in reversed(classes):#自定义工具图标
+        bpy.utils.unregister_class(cls)#先注销这个
 
-    #del bpy.types.Scene.shoud_refresh_color
-    bpy.utils.unregister_class(NODE_OT_Add_Prop_Attributenode_285D0)
-    bpy.utils.unregister_class(MNC_OT_randomize_property)
-    bpy.utils.unregister_class(SNA_OT_SelectObjectsWithSameAttribute)
+    del bpy.types.Scene.Matby_N_Colors
 
-    bpy.utils.unregister_class(SNA_PT_MATERIAL_BY_NCOLORS_85AF2)
+        # del bpy.types.Scene.edit_selected_objects_colors_C1A81
+        # del bpy.types.Scene.edit_same_color_as_active_object_B2B90
+        # del bpy.types.Scene.edit_selected_objects_float_C0000
+        # del bpy.types.Scene.edit_same_float_as_active_object__C0000
+        # #bpy.app.handlers.depsgraph_update_post.remove(get_edit_same_color_as_active_object_B2B90)
 
+        # #del bpy.types.Scene.shoud_refresh_color
+    
 if __name__ == "__main__":
     register()
