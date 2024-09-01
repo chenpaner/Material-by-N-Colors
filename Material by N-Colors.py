@@ -182,9 +182,7 @@ class MNC_OT_randomize_property(bpy.types.Operator):
 
     float_min: bpy.props.FloatProperty(
         name='Min',
-        default=0.0,
-        min=0.0,
-        max=1.0,
+        default=0.0,     
         step=5,
         precision=2,
         update=update_min_max
@@ -193,8 +191,6 @@ class MNC_OT_randomize_property(bpy.types.Operator):
     float_max: bpy.props.FloatProperty(
         name='Max',
         default=1.0,
-        min=0.0,
-        max=1.0,
         step=5,
         precision=2,
         update=update_min_max
@@ -629,13 +625,13 @@ class Materialby_N_Colors_props(PropertyGroup):
     )
 
     edit_selected_objects_float_C0000 :FloatProperty(
-        name="Float",description="Edit selected objects float",default=0.5,min=0.0, max=1.0, step=5, precision=2,
+        name="Float",description="Edit selected objects float",default=0.5, step=5, precision=2,  #min=0.0, max=1.0,
         get=get_active_object_float,
         set=set_edit_selected_objects_float_C0000,
         )
     
     edit_same_float_as_active_object__C0000 :FloatProperty(
-        name="Float",description="Edit same float as active object",default=0.5,min=0.0, max=1.0, step=3, precision=2,
+        name="Float",description="Edit same float as active object",default=0.5,step=3, precision=2, #min=0.0, max=1.0,
         get=get_active_object_float,
         set=set_edit_same_float_as_active_object__C0000,
         )
