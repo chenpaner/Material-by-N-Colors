@@ -1,17 +1,17 @@
 
+
 bl_info = {
-    "name" : "Material by N-Colors",##instance material实例材质   Dynamic Material Switcher动态材质切换器
-    "author" : "chenpaner", 
-    "description" : "通过给物体添加属性来控制材质颜色,实现同材质不同色的功能 Control the color of the material by adding attributes to the object to achieve the function of different colors for the same material",
-    "blender" : (3, 0, 0),
+    "name" : "Dynamic Material Switcher",##instance material实例材质   Dynamic Material Switcher动态材质切换器 Material by N-Colors
+    "author" : "CP-Design", 
+    "description" : "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene).",
+    "blender" : (4, 0, 0),
     "version" : (1, 0, 0),
-    "location" : "节点编辑器>工具>Material by N-Colors",
-    "warning" : "",
-    "doc_url": "https://github.com/chenpaner", 
+    "location" : "Node Editor's N panel > Tool > Dynamic Material Switcher",
+    "warning" : "This plugin is for Blender version 4.0.0 or above!",
+    "doc_url": "https://blendermarket.com/creators/cp-design", 
     "tracker_url": "", 
     "category" : "CP" 
 }
-
 
 import os
 import bpy
@@ -42,6 +42,8 @@ else:
 
 import textwrap
 
+
+
 ##插件PowerProps值得参考
 
 # ----------------------------------------------------根据物体不同自动切换属性值---------------------------------------------------- #
@@ -52,8 +54,8 @@ import textwrap
 #todo 在顶部放一个活动物体的所有自定义属性的枚举，然后设置这个名的属性，这样可以为一个物体有多个材质solt都要用不同颜色的属性新建多个自定义属性
 class NODE_OT_Add_Prop_Attributenode_285D0(Operator):
     bl_idname = "wm.add_prop_and_attributenode_285d0"
-    bl_label = "添加一个属性节点和给所有使用该材质的物体添加自定义属性"
-    bl_description = "Add a Custom to all objects with this material\nAdd node"
+    bl_label = ""
+    bl_description = "Add property to all objects with this material\nAdd node"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -186,23 +188,11 @@ def update_min_max(self, context):
 class MNC_OT_randomize_property(Operator):
     bl_idname = 'mnc.randomize_property'
     bl_label = 'Randomize Property'
-    bl_description = 'Randomize property on all selected objects\n随机化所有选中对象的属性'
+    bl_description = 'Randomize property on all selected objects'
     bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     prop_name: bpy.props.StringProperty(options={'HIDDEN'})
     seed: bpy.props.IntProperty(name='Seed', description='Seed for the random number generator',options={'HIDDEN'})
-
-    # float_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
-    # float_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
-
-    # r_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
-    # r_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
-
-    # g_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
-    # g_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
-
-    # b_min: bpy.props.FloatProperty(name='Min',default=0.0,min=0.0, max=1.0, step=5, precision=2,)
-    # b_max: bpy.props.FloatProperty(name='Max',default=1.0,min=0.0, max=1.0, step=5, precision=2,)
 
     float_min: bpy.props.FloatProperty(
         name='Min',
@@ -393,8 +383,8 @@ def are_colors_almost_equal(color1, color2, threshold=0.001):
 
 class SNA_OT_SelectObjectsWithSameAttribute(Operator):
     bl_idname = "sna.select_same_attribute"
-    bl_label = "Select Objects with Same Attribute"
-    bl_description = "Select Objects with Same Attribute \n选择与活动对象属性颜色一样的物体"
+    bl_label = ""
+    bl_description = "Select Objects with Same Attribute"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -418,7 +408,7 @@ class SNA_OT_SelectObjectsWithSameAttribute(Operator):
         return {'FINISHED'}
 
 class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
-    bl_label = 'Material by N-Objects'
+    bl_label = 'Dynamic Material Switcher'
     bl_idname = 'SNA_PT_MATERIAL_BY_NCOLORS_85AF2'
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
@@ -444,62 +434,124 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
         layout = self.layout
 
     def draw(self, context):
-        if context.space_data.shader_type == 'WORLD':
-            return
+        # if context.space_data.shader_type == 'WORLD':# 'OBJECT'
+        #     return
 
         layout = self.layout
         obj = bpy.context.active_object
 
-        # header, panel = layout.panel("my_panel_id", default_closed=False)#在饼菜单里没作用
-        # header.label(text="Material by N-Objects")
-        # if panel:
-             
-        if obj and obj.active_material and obj.active_material==bpy.context.material:
-            op = layout.operator('object.select_linked', text=f'Select Objs use [{bpy.context.material.name}]', icon_value=256, emboss=True, depress=False)
-            op.type = 'MATERIAL'
+        panel=True
+        if context.space_data.shader_type == 'OBJECT':
+            if bpy.app.version >= (4, 1):
+                header, panel = layout.panel("my_panel_a", default_closed=False)#bl4.1
+                header.label(text="Material by N-Objects",icon="MESH_MONKEY")
+            else:
+                r = layout.row(heading='', align=False)
+                r.alignment = 'CENTER'.upper()
+                r.label(text="Material by N-Objects")
+            if panel:
+                layout = layout.box()
+                if obj and obj.active_material and obj.active_material==bpy.context.material:
+                    tex=rpt_("Select all use [%s] objs") % (bpy.context.material.name)
+                    op = layout.operator('object.select_linked', text=tex, icon_value=256, emboss=True, depress=False)
+                    op.type = 'MATERIAL'
 
-        if obj and ("CP Custom colors" in obj or "CP Custom float" in obj):
-            box_9C21B = layout.box()
-            co=box_9C21B.column(align=True, heading='', heading_ctxt='', translate=True)
-            co.label(text='设置与活动物体属性值相等的物体属性', icon_value=551)
-            row_3835D = co.row(heading='', align=False)
-            row_3835D.prop(bpy.context.scene.Matby_N_Colors, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
-            #row_3835D.label(text='选择和活动物体一样材质，并且属性的颜色一样的物体', icon_value=256)
-            row_3835D.operator('sna.select_same_attribute', text='', icon_value=256, emboss=True, depress=False)
+                if obj and ("CP Custom colors" in obj or "CP Custom float" in obj):
+                    box_9C21B = layout.box()
+                    co=box_9C21B.column(align=True, heading='', heading_ctxt='', translate=True)
+                    co.label(text='Set objs`s property to be equal to the active object\'s property value.', icon_value=551)
+                    row_3835D = co.row(heading='', align=False)
+                    row_3835D.prop(bpy.context.scene.Matby_N_Colors, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
+                    #row_3835D.label(text='选择和活动物体一样材质，并且属性的颜色一样的物体', icon_value=256)
+                    row_3835D.operator('sna.select_same_attribute', text='', icon_value=256, emboss=True, depress=False)
 
-            co.prop(bpy.context.scene.Matby_N_Colors, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
+                    co.prop(bpy.context.scene.Matby_N_Colors, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
 
-            box_CCCCC = layout.box()
-            col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
-            col.label(text='设置所有选中物体(活动物体)属性', icon="STICKY_UVS_LOC")
-            row_D = col.row(heading='', align=False)
-            row_D.prop(bpy.context.scene.Matby_N_Colors, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
-            op=row_D.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
-            op.prop_name="CP Custom colors"
+                    box_CCCCC = layout.box()
+                    col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
+                    col.label(text='Set properties of all selected objects (active object)', icon="STICKY_UVS_LOC")
+                    row_D = col.row(heading='', align=False)
+                    row_D.prop(bpy.context.scene.Matby_N_Colors, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
+                    op=row_D.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
+                    op.prop_name="CP Custom colors"
 
-            row_E = col.row(heading='', align=False)
-            row_E.prop(bpy.context.scene.Matby_N_Colors, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
-            op=row_E.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
-            op.prop_name="CP Custom float"
+                    row_E = col.row(heading='', align=False)
+                    row_E.prop(bpy.context.scene.Matby_N_Colors, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
+                    op=row_E.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
+                    op.prop_name="CP Custom float"
 
-        row = layout.row(heading='', align=True)
-        row.scale_y = 1.0
-        icon="ADD"
-        all_objects = bpy.data.objects
-        objects_with_active_material = []
-        for obj in all_objects:
-            if any(slot.material == bpy.context.material for slot in obj.material_slots):##bpy.context.material
-                objects_with_active_material.append(obj)
-        tex='Add/Select Node'
-        for obj in objects_with_active_material:
-            if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
-                row.alert = True
-                icon="FILE_REFRESH"
-                row.scale_y = 2.0
-                tex='Add prop to objs using this material'#给使用该材质的物体添加属性
-                break  # 只要有一个满足条件就停止循环
+                row = layout.row(heading='', align=True)
+                row.scale_y = 1.0
+                icon="ADD"
+                all_objects = bpy.data.objects
+                objects_with_active_material = []
+                for obj in all_objects:
+                    if any(slot.material == bpy.context.material for slot in obj.material_slots):##bpy.context.material
+                        objects_with_active_material.append(obj)
+                tex='Add/Select Node'
+                for obj in objects_with_active_material:
+                    if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
+                        row.alert = True
+                        icon="FILE_REFRESH"
+                        row.scale_y = 2.0
+                        tex='Add prop to objs using this material'#给使用该材质的物体添加属性
+                        break  # 只要有一个满足条件就停止循环
 
-        row.operator('wm.add_prop_and_attributenode_285d0', text=tex, icon=icon, emboss=True, depress=False)
+                row.operator('wm.add_prop_and_attributenode_285d0', text=rpt_(tex), icon=icon, emboss=True, depress=False)
+
+
+        scenes = bpy.data.scenes
+        viewlayers = context.scene.view_layers
+        if len(viewlayers) == 1 and len(scenes) == 1:
+            return
+
+        layout = self.layout
+
+        pan=True
+        if bpy.app.version >= (4, 1):
+            header, pan = layout.panel("my_panel_b", default_closed=False)#bl4.1
+            header.label(text="Material by N-Viewlayer(Scene)",icon="RENDER_RESULT")
+        else:
+            r = layout.row(heading='', align=False)
+            r.alignment = 'CENTER'.upper()
+            r.label(text="Material by N-Viewlayer(Scene)")
+        if pan:
+            box = layout.box()
+            row = box.row(heading='', align=False)
+            row.scale_y = 1.5
+            row.operator('wm.add_prop_and_node_to_viewlayer', text='Add property to viewlayer/Refresh nodes', icon="RENDER_RESULT", emboss=True, depress=False)
+
+            if len(viewlayer_prop_nodes)>1:
+                box_CCCCC = layout.box()
+
+                width = context.region.width#- 45- 20 #N面板的宽度
+                ui_scale = bpy.context.preferences.view.ui_scale
+                fontCount = math.floor(width / (fontsize*ui_scale* 1.5)) # 调整为中文字符宽度 这样中文才会自动换行##fontCount = floor(width / (fontsize))#+ 10#fontsize = 12
+                textTowrap = rpt_("There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"" )
+                wrapp = textwrap.TextWrapper(width=fontCount) #50 = maximum length       
+                wList = wrapp.wrap(text=textTowrap)#对textTowrap中的单独段落自动换行以使每行长度最多为 width 个字符
+
+                for i, text in enumerate(wList):
+                    icon = 'ERROR'
+                    if i > 0:  # 如果是第二行
+                        text = "    " + text  # 在文本开头添加一个空格
+                        icon = 'BLANK1'
+                    box_CCCCC.row()  # 创建一个行，用作空行的占位符
+                    c = box_CCCCC.column(align=True)
+                    c.alert = True
+                    c.alignment = 'LEFT'
+                    c.scale_y = 0.5
+                    c.label(text=text, icon=icon)
+
+
+                col=box_CCCCC.column(align=True)
+                #col.label(text='Blender里有多个Scene Prop Group属性的节点树！', icon="ERROR") 
+                #col.label(text='它们都会被自动修改,把不用自动刷新的节点树属性改为默认', icon="ERROR")
+                #row_3835D = col.row(heading='', align=False)
+                for tree in viewlayer_prop_nodes:
+                    #s = col.split(factor=0.75, align=True)
+                    col.label(text=tree.name, icon="NODETREE")
+                    col.prop(tree, 'Matby_N_Colors_type', text='', icon_value=0, emboss=True)
  
 ##############       
 def get_active_object_color(self):
@@ -638,7 +690,7 @@ def set_edit_same_float_as_active_object__C0000(self, value):
 # 所有场景属性汇总---------------------------------------------------- #
 class Materialby_N_Colors_props(PropertyGroup):
     edit_selected_objects_colors_C1A81 :FloatVectorProperty(
-        name='Sets the property color of all selected objects', description='设置所有选中物体(活动物体)的属性颜色', 
+        name='Color', description='Sets the property color of selected objects', 
         size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=3, precision=2, 
         get=get_active_object_color,
         set=set_edit_selected_objects_colors_C1A81,
@@ -646,8 +698,8 @@ class Materialby_N_Colors_props(PropertyGroup):
         )
 
     edit_same_color_as_active_object_B2B90 :FloatVectorProperty(
-        name='Also adjust the attribute color of the same attribute color as the active object',
-        description='调整与活动物体同色的物体属性颜色',
+        name='Color',
+        description='Adjust the color properties of objects with the same color property as the active object',
         size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=5, precision=2, 
         get=get_active_object_color,
         set=set_edit_same_color_as_active_object_B2B90,
@@ -655,13 +707,13 @@ class Materialby_N_Colors_props(PropertyGroup):
     )
 
     edit_selected_objects_float_C0000 :FloatProperty(
-        name="Float",description="Edit selected objects float",default=0.5, step=5, precision=2,  #min=0.0, max=1.0,
+        name="Float",description="Sets the property float of selected objects",default=0.5, step=5, precision=2,  #min=0.0, max=1.0,
         get=get_active_object_float,
         set=set_edit_selected_objects_float_C0000,
         )
     
     edit_same_float_as_active_object__C0000 :FloatProperty(
-        name="Float",description="Edit same float as active object",default=0.5,step=3, precision=2, #min=0.0, max=1.0,
+        name="Float",description="Adjust the float properties of all objects that have the same float property value as the active object",default=0.5,step=3, precision=2, #min=0.0, max=1.0,
         get=get_active_object_float,
         set=set_edit_same_float_as_active_object__C0000,
         )
@@ -1073,7 +1125,7 @@ def check_propnode(nodes):
     colornode.show_options=False
     return colornode
 
-
+'''
 class SNA_PT_MATERIAL_BY_Nviewlayer_85AF2(Panel):
     bl_label = 'Material by N-Viewlayer(Scene)'
     bl_idname = 'SNA_PT_MATERIAL_BY_Nviewlayer_85AF2'
@@ -1131,6 +1183,7 @@ class SNA_PT_MATERIAL_BY_Nviewlayer_85AF2(Panel):
                 #s = col.split(factor=0.75, align=True)
                 col.label(text=tree.name, icon="NODETREE")
                 col.prop(tree, 'Matby_N_Colors_type', text='', icon_value=0, emboss=True)
+'''
 
 viewlayer_prop_nodes=[]
 
@@ -1138,8 +1191,8 @@ viewlayer_prop_nodes=[]
 
 class NODE_OT_Add_Prop_Node_To_Viewlayer(Operator):
     bl_idname = "wm.add_prop_and_node_to_viewlayer"
-    bl_label = "Add customs to all viewlayers\nAdd node"
-    bl_description = "自动给所有场景添加属性\n给节点树添加节点\n添加场景后刷新属性"
+    bl_label = ""
+    bl_description = "Automatically add properties to each view layer in all scenes\nAdd nodes to editting tree\nRefresh properties after the view layer changes"
     bl_options = {"REGISTER", "UNDO"}
 
     def execute(self, context):
@@ -1156,7 +1209,7 @@ class NODE_OT_Add_Prop_Node_To_Viewlayer(Operator):
             if node_group.Matby_N_Colors_type=='Viewlayer Prop':
                 viewlayer_prop_nodes.append(node_group)
         if len(viewlayer_prop_nodes)>1:
-            self.report({'ERROR'}, "Blender里有多个Viewlayer Group属性的节点树！但只能有一个该属性的节点组才能运行操作!")
+            self.report({'ERROR'}, "There are multiple node trees with \"Viewlayer Group\" properties in Blender! However, only one nodetree with this property can run the operation!")
             return {"FINISHED"}
 
         scenes = bpy.data.scenes
@@ -1609,6 +1662,40 @@ def restore_node_group_inputs_innodetree(tree, backup_data, protree):
                             if input_info['linked']:
                                 tree.links.new(input_info['linked_socket'], input)
 
+specific_dict = {
+    ('*', "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene)."): 
+    '通过给物体/视图层添加属性来控制材质,实现同一个材质根据物体或视图层(场景)自动切换不同的效果.',
+    ('*', 'Dynamic Material Switcher'): '动态材质切换器',
+    ('*', 'Material by N-Objects'): '根据物体切换材质',
+    
+    ('*', 'Select all use [%s] objs'): '"选中所有使用 [%s] 材质的物体"',
+    ('*', 'Set objs`s property to be equal to the active object\'s property value.'): '设置与活动物体属性值相等的物体属性',
+    ('*', 'Set properties of all selected objects (active object)'): '设置所有选中物体(活动物体)属性',
+    ('*', 'Add prop to objs using this material'): '有使用该材质的物体缺失属性!',#有使用该材质的物体缺失属性
+    ('*', 'Add/Select Node'): '添加/选中属性切换节点',
+    ('*', 'Material by N-Viewlayer(Scene)'): '根据视图层(场景)切换材质',
+    ('Operator', 'Add property to viewlayer/Refresh nodes'): '给视图层添加属性/刷新节点',
+    ('*', 'There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"'): '有多个Viewlayer Group属性的节点树,它们都会被自动刷新,把不用自动刷新的节点树属性改为默认',
+
+    ('*', 'Sets the property color of selected objects'): '设置所有选中物体(活动物体)的颜色属性',
+    ('*', 'Adjust the color properties of objects with the same color property as the active object'): '调整所有与活动物体同色的物体颜色属性',
+
+    ('*', 'Sets the property float of selected objects'): '设置所有选中物体(活动物体)的浮点属性',
+    ('*', 'Adjust the float properties of objects that have the same float property value as the active object'): '调整所有与活动物体属性浮点值相等的物体浮点属性值',
+    ('*', 'Automatically add properties to each view layer in all scenes\nAdd nodes to editting tree\nRefresh properties after the view layer changes'): '自动给所有场景的每个视图层添加属性\n给当前节点树添加节点\n视图层变化后刷新属性',
+    ('*', 'There are multiple node trees with \"Viewlayer Group\" properties in Blender! However, only one nodetree with this property can run the operation!'): 'Blender里有多个Viewlayer Group属性的节点树！但只能有一个该属性的节点组才能运行操作!',
+    ('Operator', 'Select Objects with Same Attribute'): '选择与活动对象属性颜色一样的物体',
+    ('Operator', 'Randomize Property'): '随机化属性',
+    ('Operator', 'Randomize property on all selected objects'): '随机化所有选中对象的属性',
+    ('Operator', 'Add property to all objects with this material\nAdd node'): '添加一个属性节点/给所有使用该材质的物体添加属性',
+
+    
+}
+
+langs = {
+    'zh_HANS':specific_dict, 
+    'zh_CN':specific_dict,   
+}
 
 classes = (
     NODE_OT_Add_Prop_Attributenode_285D0,
@@ -1623,9 +1710,10 @@ classes = (
     # SNA_PT_MATERIAL_BY_NScene_85AF2,
 
     NODE_OT_Add_Prop_Node_To_Viewlayer,
-    SNA_PT_MATERIAL_BY_Nviewlayer_85AF2,
+    #SNA_PT_MATERIAL_BY_Nviewlayer_85AF2,
     
 )
+  
 
 def register():
     for cls in classes:
@@ -1644,6 +1732,8 @@ def register():
         description="Do not modify this property manually, it is automatically generated",
         default="Default",
         )
+    bpy.app.translations.register(__name__, langs)
+    
 
 def unregister():
     for cls in reversed(classes):#自定义工具图标
@@ -1651,6 +1741,8 @@ def unregister():
 
     del bpy.types.Scene.Matby_N_Colors
     del bpy.types.NodeTree.Matby_N_Colors_type
+    bpy.app.translations.unregister(__name__)
+   
 
     
 if __name__ == "__main__":

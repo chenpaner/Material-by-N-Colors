@@ -1,0 +1,23 @@
+schema_version = "1.0.0"
+id = "dynamic_material_switcher"
+version = "1.0.0"
+name = "Dynamic Material Switcher"
+tagline = "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene)."
+maintainer = "CP-Design"
+type = "add-on"
+website = "https://blendermarket.com/creators/cp-design"
+tags = ["Material"]
+blender_version_min = "4.0.0"
+
+license = [
+  "SPDX:GPL-2.0-or-later",
+]
+
+copyright = ["2024 Campbell Barton"]
+
+
+
+
+
+
+
