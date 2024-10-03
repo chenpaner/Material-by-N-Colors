@@ -1634,8 +1634,6 @@ def restore_node_group_inputs_innodetree(tree, backup_data, protree):
                             if input_info['linked']:
                                 tree.links.new(input_info['linked_socket'], input)
 
-
-
 # ----------------------------------------------------视图层批量渲染---------------------------------------------------- #
 # ----------------------------------------------------视图层批量渲染---------------------------------------------------- #
 # ----------------------------------------------------视图层批量渲染---------------------------------------------------- #
@@ -1967,8 +1965,12 @@ class CPBR_UL_viewlayer_list(UIList):
 
                 col_01C15.separator(factor=1.0)
 
-            col_49E9F.separator(factor=2.0)
-
+            #col_49E9F.separator(factor=2.0)
+            if bpy.app.version >= (4, 2):
+                col_49E9F.separator(type="LINE") 
+                
+            else:
+                col_49E9F.separator()
 
 class CPBR_PT_UIListPanel(Panel):
     """Creates a Panel in the Object properties window"""
@@ -2013,6 +2015,14 @@ class CPBR_PT_UIListPanel(Panel):
         row = layout.row(heading='', align=True)
         row.scale_y = 2.5
         row.operator("cpbr.batch_render", icon='RENDER_STILL',)
+        if bpy.context.scene.CPBR_Main_Props.cp_batchrendering:
+            layout.label(text="Batch rendering....", icon_value=1)
+            global progress
+            layout.progress(factor = progress, text = "Updating")
+        if bpy.app.version >= (4, 2):
+            layout.separator(type="LINE")  
+        else:
+            layout.separator()
 
         #if CPBR_OT_BatchRender.running:
             # text=renderscenename
@@ -2022,6 +2032,10 @@ class CPBR_PT_UIListPanel(Panel):
         layout.label(text="Only need one viewlayer node and one output node in compositor!", icon_value=1)
         layout.label(text="Other plugins that automatically set the path of the output node will affect the save path!", icon_value=1)
 
+        if bpy.app.version >= (4, 2):
+            layout.separator(type="LINE")  
+        else:
+            layout.separator()
         ##！！！同步渲染器的面板何和色彩空和视图层的
 
 # 操作类用于切换场景和视图层
@@ -2080,6 +2094,20 @@ renderscenename=""
 
 render_list = []
 
+import threading
+progress = 0.0
+def update_ui():
+    # Force UI update
+    for window in bpy.context.window_manager.windows:
+        for area in window.screen.areas:
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
+
+    # if is_scanning:
+    #     return 0.1  # Call every 0.1 seconds
+    # else:
+    return None  # Stop the timer
+
 #应提前检查所有场景是否相同渲染器
 class CPBR_OT_BatchRender(Operator):
     bl_idname = "cpbr.batch_render"
@@ -2091,6 +2119,8 @@ class CPBR_OT_BatchRender(Operator):
 
     #scenename: StringProperty(default="")
     def invoke(self, context, event):
+        # bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
+        # context.region.tag_redraw()
         return self.execute(context)
 
     def execute(self, context):
@@ -2251,25 +2281,26 @@ class CPBR_OT_BatchRender(Operator):
         # # 如果渲染列表不为空，则设置场景、视图层和相机
         if render_list:
             bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
-            # #先检查所有场景的合成输出是否有
-            # bad_scene = set()#集合
-            # for entry in render_list:
-            #     has_outnode=False
-            #     has_layernote=False
-            #     if bpy.data.scenes[entry['scene'].name].use_nodes:
-            #         for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
-            #             if node.type=="R_LAYERS":
-            #                 has_layernote=True
-            #             if node.type == "OUTPUT_FILE" and node.mute==False and node.file_slots:#没有屏蔽并且有输出槽
-            #                 # 检查该节点的输入端口是否有任意一个是有连接的
-            #                 if any(input.is_linked for input in node.inputs):
-            #                     has_outnode = True
+            
+                # #先检查所有场景的合成输出是否有
+                # bad_scene = set()#集合
+                # for entry in render_list:
+                #     has_outnode=False
+                #     has_layernote=False
+                #     if bpy.data.scenes[entry['scene'].name].use_nodes:
+                #         for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
+                #             if node.type=="R_LAYERS":
+                #                 has_layernote=True
+                #             if node.type == "OUTPUT_FILE" and node.mute==False and node.file_slots:#没有屏蔽并且有输出槽
+                #                 # 检查该节点的输入端口是否有任意一个是有连接的
+                #                 if any(input.is_linked for input in node.inputs):
+                #                     has_outnode = True
 
-            #     if has_outnode==False or has_layernote==False:
-            #         #self.report({'ERROR'}, "合成里输出节点没有!")
-            #         bad_scene.add(entry['scene'].name)#集合能避免重复添加
-            # if bad_scene:
-            #     self.report({'ERROR'}, f"{bad_scene}的合成树里要检查层节点/输出节点是否连接!")
+                #     if has_outnode==False or has_layernote==False:
+                #         #self.report({'ERROR'}, "合成里输出节点没有!")
+                #         bad_scene.add(entry['scene'].name)#集合能避免重复添加
+                # if bad_scene:
+                #     self.report({'ERROR'}, f"{bad_scene}的合成树里要检查层节点/输出节点是否连接!")
 
             #检查所有场景的合成输出 上面的是简单版本，这个是详细报告具体 
             scene_problems = {}
@@ -2323,7 +2354,22 @@ class CPBR_OT_BatchRender(Operator):
             for solt in r.render_slots:
                 solt.name="Solt"#修改槽的名字
             step=0
+
+            #鼠标显示进度
+            wm = bpy.context.window_manager
+            # progress from [0 - 1000]
+            tot = len(render_list)
+            wm.progress_begin(0, tot)
+            # for i in range(tot):
+            #     wm.progress_update(i)
+            # wm.progress_end()
+
+            
             for entry in render_list:
+                i=step
+                if step==0:
+                    i=tot/10#从10%开始显示
+                wm.progress_update(i)
                 r.render_slots.active_index = step#index if index<= total-1 else 0 #每个场景切换一个渲染槽就行了
                 
                 # # 设置场景
@@ -2392,6 +2438,8 @@ class CPBR_OT_BatchRender(Operator):
                     renderfinishtime=datetime.now()
                     auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
 
+
+
                 step += 1
                 if step>total:step = 0
 
@@ -2427,13 +2475,18 @@ class CPBR_OT_BatchRender(Operator):
 
             # print(f"2渲染列表数量：{len(render_list)}")    
 
+            wm.progress_end()
+
+        
 
         #render_list = {}
         running = False
         bpy.context.scene.CPBR_Main_Props.cp_batchrendering = False
+        #bpy.app.timers.register(update_ui)
         renderscenename=""
 
         return {'FINISHED'}
+
 
 # #保存渲染记录auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'])
 def auto_saverendertext(filepath, scene, view_layer, camera, world, x, y, strattime, renderfinishtime):
