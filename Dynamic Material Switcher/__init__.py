@@ -2015,10 +2015,18 @@ class CPBR_PT_UIListPanel(Panel):
         row = layout.row(heading='', align=True)
         row.scale_y = 2.5
         row.operator("cpbr.batch_render", icon='RENDER_STILL',)
-        if bpy.context.scene.CPBR_Main_Props.cp_batchrendering:
-            layout.label(text="Batch rendering....", icon_value=1)
-            global progress
-            layout.progress(factor = progress, text = "Updating")
+        global bugmes
+        if bpy.context.scene.CPBR_Main_Props.cp_batchrendering and bugmes:
+            # 将字符串按照 '-' 分割
+            segments = bugmes.split('- ')
+            col = layout.column(heading="", align=True)
+            for t in segments:
+                r=col.row(align=True)
+                r.alert = True
+                r.label(text=t, icon='ERROR')
+            # layout.label(text="Batch rendering....", icon_value=1)
+        #     # global progress
+        #     # layout.progress(factor = progress, text = "Updating")
         if bpy.app.version >= (4, 2):
             layout.separator(type="LINE")  
         else:
@@ -2108,6 +2116,8 @@ def update_ui():
     # else:
     return None  # Stop the timer
 
+bugmes=''
+
 #应提前检查所有场景是否相同渲染器
 class CPBR_OT_BatchRender(Operator):
     bl_idname = "cpbr.batch_render"
@@ -2125,11 +2135,15 @@ class CPBR_OT_BatchRender(Operator):
 
     def execute(self, context):
         scenes = bpy.data.scenes
-        global renderscenename
+        global renderscenename,bugmes
+        bugmes=''
+        running = True
+        bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
 
         # 检查是否已保存文件
         if not bpy.data.is_saved:
             self.report({'ERROR'}, "Please save the file before render!")
+            bugmes='Please save the file before render!'
             return {'CANCELLED'}  # 取消操作
 
         #def update_viewlayercamera():#检查视图层相机属性的相机是否是场景里的相机
@@ -2179,6 +2193,8 @@ class CPBR_OT_BatchRender(Operator):
         if reset_camera:
             #self.report({'ERROR'}, f"{reset_camera}")
             self.report({'ERROR'}, f"\n{''.join(reset_camera)}")
+            # 将列表中的所有元素连接成一个字符串
+            bugmes = '- '.join(reset_camera)
             return {'FINISHED'}
 
         for window in bpy.context.window_manager.windows:
@@ -2275,13 +2291,12 @@ class CPBR_OT_BatchRender(Operator):
                                 'world': world,
                             })
 
-
         # 打印渲染列表以验证结果
         #print(render_list)
         # # 如果渲染列表不为空，则设置场景、视图层和相机
         if render_list:
-            bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
-            
+            # bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
+            savescene=context.scene
                 # #先检查所有场景的合成输出是否有
                 # bad_scene = set()#集合
                 # for entry in render_list:
@@ -2344,6 +2359,9 @@ class CPBR_OT_BatchRender(Operator):
                     report_message += ", ".join(problems)
                 
                 self.report({'ERROR'}, report_message)
+
+                bugmes=report_message
+
                 running = False
                 renderscenename=""
                 return {'FINISHED'}
@@ -2477,7 +2495,8 @@ class CPBR_OT_BatchRender(Operator):
 
             wm.progress_end()
 
-        
+            # # # 设置场景
+            # context.window.scene = savescene
 
         #render_list = {}
         running = False
