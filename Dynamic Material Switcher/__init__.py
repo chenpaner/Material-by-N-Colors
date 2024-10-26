@@ -1,7 +1,7 @@
 
 
 bl_info = {
-    "name" : "Dynamic Material Switcher",##instance material实例材质   Dynamic Material Switcher动态材质切换器 Material by N-Colors
+    "name" : "Dynamic Material Switcher只支持4.0及以上，节点组面板的问题",##instance material实例材质   Dynamic Material Switcher动态材质切换器 Material by N-Colors
     "author" : "CP-Design", 
     "description" : "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene).",
     "blender" : (4, 0, 0),
@@ -520,39 +520,40 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
             box = layout.box()
             row = box.row(heading='', align=False)
             row.scale_y = 1.5
-            row.operator('wm.add_prop_and_node_to_viewlayer', text='Add property to viewlayer/Refresh nodes', icon="RENDER_RESULT", emboss=True, depress=False)
+            row.operator('wm.add_prop_and_node_to_viewlayer', text='Add node/Refresh node/Add property to viewlayer', icon="RENDER_RESULT", emboss=True, depress=False)
 
-            if len(viewlayer_prop_nodes)>1:
-                box_CCCCC = layout.box()
+            return
+            # if len(viewlayer_prop_nodes)>1:
+                # box_CCCCC = layout.box()
 
-                width = context.region.width#- 45- 20 #N面板的宽度
-                ui_scale = bpy.context.preferences.view.ui_scale
-                fontCount = math.floor(width / (fontsize*ui_scale* 1.5)) # 调整为中文字符宽度 这样中文才会自动换行##fontCount = floor(width / (fontsize))#+ 10#fontsize = 12
-                textTowrap = rpt_("There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"" )
-                wrapp = textwrap.TextWrapper(width=fontCount) #50 = maximum length       
-                wList = wrapp.wrap(text=textTowrap)#对textTowrap中的单独段落自动换行以使每行长度最多为 width 个字符
+                # width = context.region.width#- 45- 20 #N面板的宽度
+                # ui_scale = bpy.context.preferences.view.ui_scale
+                # fontCount = math.floor(width / (fontsize*ui_scale* 1.5)) # 调整为中文字符宽度 这样中文才会自动换行##fontCount = floor(width / (fontsize))#+ 10#fontsize = 12
+                # textTowrap = rpt_("There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"" )
+                # wrapp = textwrap.TextWrapper(width=fontCount) #50 = maximum length       
+                # wList = wrapp.wrap(text=textTowrap)#对textTowrap中的单独段落自动换行以使每行长度最多为 width 个字符
 
-                for i, text in enumerate(wList):
-                    icon = 'ERROR'
-                    if i > 0:  # 如果是第二行
-                        text = "    " + text  # 在文本开头添加一个空格
-                        icon = 'BLANK1'
-                    box_CCCCC.row()  # 创建一个行，用作空行的占位符
-                    c = box_CCCCC.column(align=True)
-                    c.alert = True
-                    c.alignment = 'LEFT'
-                    c.scale_y = 0.5
-                    c.label(text=text, icon=icon)
+                # for i, text in enumerate(wList):
+                #     icon = 'ERROR'
+                #     if i > 0:  # 如果是第二行
+                #         text = "    " + text  # 在文本开头添加一个空格
+                #         icon = 'BLANK1'
+                #     box_CCCCC.row()  # 创建一个行，用作空行的占位符
+                #     c = box_CCCCC.column(align=True)
+                #     c.alert = True
+                #     c.alignment = 'LEFT'
+                #     c.scale_y = 0.5
+                #     c.label(text=text, icon=icon)
 
 
-                col=box_CCCCC.column(align=True)
-                #col.label(text='Blender里有多个Scene Prop Group属性的节点树！', icon="ERROR") 
-                #col.label(text='它们都会被自动修改,把不用自动刷新的节点树属性改为默认', icon="ERROR")
-                #row_3835D = col.row(heading='', align=False)
-                for tree in viewlayer_prop_nodes:
-                    #s = col.split(factor=0.75, align=True)
-                    col.label(text=tree.name, icon="NODETREE")
-                    col.prop(tree, 'Matby_N_Colors_type', text='', icon_value=0, emboss=True)
+                # col=box_CCCCC.column(align=True)
+                # #col.label(text='Blender里有多个Scene Prop Group属性的节点树！', icon="ERROR") 
+                # #col.label(text='它们都会被自动修改,把不用自动刷新的节点树属性改为默认', icon="ERROR")
+                # #row_3835D = col.row(heading='', align=False)
+                # for tree in viewlayer_prop_nodes:
+                #     #s = col.split(factor=0.75, align=True)
+                #     col.label(text=tree.name, icon="NODETREE")
+                #     col.prop(tree, 'Matby_N_Colors_type', text='', icon_value=0, emboss=True)
  
 ##############       
 def get_active_object_color(self):
@@ -1046,7 +1047,7 @@ def import_node(nodename,bytype=False):
             if node_group.Matby_N_Colors_type=='Viewlayer Prop':
                 resultnode=node_group
                 break
-    else:#内部切换的子节点组
+    else:#寻找内部切换的子节点树是否已经导入
         for node_group in bpy.data.node_groups:
             if node_group.name==nodename:
                 resultnode=node_group
@@ -1157,9 +1158,40 @@ class SNA_PT_MATERIAL_BY_Nviewlayer_85AF2(Panel):
                 col.prop(tree, 'Matby_N_Colors_type', text='', icon_value=0, emboss=True)
 '''
 
-viewlayer_prop_nodes=[]
+# viewlayer_prop_nodes=[]
 
-#Todo,当视图层数量变换后刷新会导致每个图层的默认的颜色设置变为默认黑色，应该在每次刷新前备份每个面板名和面板名下各端口的值  方法不对，每个材质里该节点组端口的值都不一样
+
+def makejustone_viewlayer_prop_nodetree():
+    newtree = bpy.data.node_groups.get(".CP_ViewLayer_Material")
+    if not newtree:
+        for node_tree in bpy.data.node_groups:
+            if hasattr(node_tree, 'Matby_N_Colors_type') and node_tree.Matby_N_Colors_type == 'Viewlayer Prop':
+                node_tree.name = ".CP_ViewLayer_Material"
+                break
+    if not newtree:
+        return  # 如果还是没有找到 .CP_ViewLayer_Material，则不执行后续操作
+    # 迭代场景中的所有材质是否有重复属性的节点树
+    for material in bpy.data.materials:
+        if material.node_tree:
+            nodetree=material.node_tree
+            for node in nodetree.nodes:
+                if node.bl_idname == 'ShaderNodeGroup':
+                    if node.node_tree and node.node_tree.Matby_N_Colors_type=='Viewlayer Prop':
+                        if node.node_tree.name != ".CP_ViewLayer_Material":
+                            
+                            node.node_tree=newtree
+                        
+    #迭代所有blender节点树里自定义节点是否有重复属性的节点树
+    for node_tree in bpy.data.node_groups:
+        for node in node_tree.nodes:
+            if node.bl_idname == 'ShaderNodeGroup':
+                if node.node_tree and node.node_tree.Matby_N_Colors_type=='Viewlayer Prop':
+                    if node.node_tree.name != ".CP_ViewLayer_Material":
+                        node.node_tree=newtree
+    ##删除多余属性的节点树
+    for node_tree in bpy.data.node_groups:
+        if node_tree.Matby_N_Colors_type=='Viewlayer Prop' and node_tree.name != ".CP_ViewLayer_Material":
+                bpy.data.node_groups.remove(node_tree, do_unlink=True)
 
 class NODE_OT_Add_Prop_Node_To_Viewlayer(Operator):
     bl_idname = "wm.add_prop_and_node_to_viewlayer"
@@ -1175,14 +1207,17 @@ class NODE_OT_Add_Prop_Node_To_Viewlayer(Operator):
         #重新导入一个新的节点组，先清除bl里Matby_N_Colors_type=='Scene Prop'的属性，然后导入一个新的，可用按住shift操作
 
         #先检测当前页面里有几个Viewlayer Group属性的节点树，如果有多个就显示再N面板然后把这两个节点的属性显示在N面板里
-        global viewlayer_prop_nodes
-        viewlayer_prop_nodes.clear()
-        for node_group in bpy.data.node_groups:
-            if node_group.Matby_N_Colors_type=='Viewlayer Prop':
-                viewlayer_prop_nodes.append(node_group)
-        if len(viewlayer_prop_nodes)>1:
-            self.report({'ERROR'}, "There are multiple node trees with \"Viewlayer Group\" properties in Blender! However, only one nodetree with this property can run the operation!")
-            return {"FINISHED"}
+        # global viewlayer_prop_nodes
+        # viewlayer_prop_nodes.clear()
+        # for node_group in bpy.data.node_groups:
+        #     if node_group.Matby_N_Colors_type=='Viewlayer Prop':
+        #         viewlayer_prop_nodes.append(node_group)
+        # if len(viewlayer_prop_nodes)>1:
+        #     # self.report({'ERROR'}, "There are multiple node trees with \"Viewlayer Group\" properties in Blender! However, only one nodetree with this property can run the operation!")
+        #     # return {"FINISHED"}
+        #改为自动将所有节点树为Viewlayer Prop的节点组的节点树都改为.CP_ViewLayer_Material名的，
+        #然后删除多余的为Viewlayer Prop的但名字不是.CP_ViewLayer_Material的节点树
+        makejustone_viewlayer_prop_nodetree()
 
         scenes = bpy.data.scenes
         viewlayers = context.scene.view_layers
@@ -1190,6 +1225,7 @@ class NODE_OT_Add_Prop_Node_To_Viewlayer(Operator):
             self.report({'ERROR'}, "Just one viewlayer.")
             return {"FINISHED"}
         
+        #视图层添加属性
         i = 0
         length = len(viewlayers)
         for scene in scenes:
@@ -1503,7 +1539,9 @@ def backup_node_group_inputs(material, protree):
                     #     continue  # 跳过后续代码，继续下一个循环
 
                     value=1
-                    if input.type == 'RGBA':
+                    if input.type in ['VALUE','INT','BOOLEAN']:#浮点
+                        value=input.default_value
+                    elif input.type == 'RGBA':
                         value=input.default_value[:4]
                     elif input.type == 'VECTOR':
                         value=input.default_value[:3]
@@ -1585,7 +1623,9 @@ def backup_node_group_inputs_innodetree(tree,protree):
                 #     continue  # 跳过后续代码，继续下一个循环
 
                 value=1
-                if input.type == 'RGBA':
+                if input.type in ['VALUE','INT','BOOLEAN']:#浮点
+                    value=input.default_value
+                elif input.type == 'RGBA':
                     value=input.default_value[:4]
                 elif input.type == 'VECTOR':
                     value=input.default_value[:3]
@@ -1825,6 +1865,12 @@ class CPBR_UL_viewlayer_list(UIList):
             sub2=row_A41D3.row(align=True)
             sub.scale_y = 1.0
             sub2.prop(item, "name", text="", emboss=False, icon='SCENE_DATA')#场景名# emboss=False让文本不是编辑状态而是要双击才编辑
+
+            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
+            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
+            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
+            sub2.separator(factor=1.0)
+
             if item.CPBR_Main_Props.show_all_preview:
                 sub2.prop(item.CPBR_Main_Props, "show_scene_preview",icon_value=755, text="")
 
@@ -1845,6 +1891,7 @@ class CPBR_UL_viewlayer_list(UIList):
                 row_4AA07 = col_01C15.row(heading='', align=True)
 
                 #场景相机
+                # if item.CPBR_Main_Props.cp_use_scene_camera:
                 r0=row_4AA07.row(align=True)
                 #r0.alert = True
                 r0.enabled = item.CPBR_Main_Props.cp_use_scene_camera
@@ -1852,21 +1899,22 @@ class CPBR_UL_viewlayer_list(UIList):
                 #r0.prop(item, "camera", text="")
                 r0.prop(item, "camera", text='', icon_value=772, emboss=True)
 
-                row_4AA07.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
+                # row_4AA07.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
 
                 #场景世界环境
-                row_DBF9D = col_01C15.row(heading='', align=True)
-
-                r_world=row_DBF9D.row(align=True)
-                r1=r_world.row(align=True)
+                # row_DBF9D = col_01C15.row(heading='', align=True)
+                #if item.CPBR_Main_Props.cp_use_scene_world:
+                # r_world=row_DBF9D.row(align=True)
+                r1=row_4AA07.row(align=True)#r_world.row(align=True)
                 #r0.alert = True
                 r1.enabled = item.CPBR_Main_Props.cp_use_scene_world
                 r1.active = item.CPBR_Main_Props.cp_use_scene_world  
                 #r1.template_ID(item, "world")
                 r1.prop(item, 'world', text='', icon_value=82, emboss=True)
 
-                row_DBF9D.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
+                # row_DBF9D.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
 
+                #if item.CPBR_Main_Props.cp_use_scene_resolution:
                 #场景分辨率
                 row_53579 = col_01C15.row(heading='', align=True)
 
@@ -1876,7 +1924,7 @@ class CPBR_UL_viewlayer_list(UIList):
                 r3.prop(item.render, "resolution_x", text="Resolution X")
                 r3.prop(item.render, "resolution_y", text="Y")
                 
-                row_53579.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
+                # row_53579.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
 
                 col_01C15.separator(factor=1.0)
 
@@ -2000,14 +2048,14 @@ class CPBR_PT_UIListPanel(Panel):
         rowpath = layout.row(heading='', align=True)
         rp = rowpath.row(heading='', align=True)
         use_blendpath=context.scene.CPBR_Main_Props.use_auto_blenderpath
-        rp.active = use_blendpath
-        rp.prop(context.scene.CPBR_Main_Props, "use_auto_blenderpath",text="Render to a folder with the same name in BL file directory")
+        # rp.active = use_blendpath  
+        rp.prop(context.scene.CPBR_Main_Props, "use_auto_blenderpath",text="Save to BL file`s directory")
 
         blendPath = str(bpy.path.abspath('//'))  #返回相对于当前混合文件的绝对路径
         blendPath += os.path.splitext(bpy.path.basename(bpy.context.blend_data.filepath))[0]#去除.blend后缀的名字
         ro = rowpath.row(heading='', align=True)
         ro.prop(context.scene.CPBR_Main_Props, "auto_saverendertext")
-        ro.operator("wm.path_open", text="",icon = 'FILE_FOLDER').filepath = blendPath if use_blendpath else context.scene.CPBR_Main_Props.directory
+        ro.operator("wm.path_open", text="Open Save Folder",icon = 'FILE_FOLDER').filepath = blendPath if use_blendpath else context.scene.CPBR_Main_Props.directory
         if not use_blendpath:
             layout.prop(context.scene.CPBR_Main_Props, "directory", text="")
 
@@ -2016,7 +2064,7 @@ class CPBR_PT_UIListPanel(Panel):
         row.scale_y = 2.5
         row.operator("cpbr.batch_render", icon='RENDER_STILL',)
         global bugmes
-        if bpy.context.scene.CPBR_Main_Props.cp_batchrendering and bugmes:
+        if bugmes:
             # 将字符串按照 '-' 分割
             segments = bugmes.split('- ')
             col = layout.column(heading="", align=True)
@@ -2118,61 +2166,422 @@ def update_ui():
 
 bugmes=''
 
-#应提前检查所有场景是否相同渲染器
+
 class CPBR_OT_BatchRender(Operator):
     bl_idname = "cpbr.batch_render"
     bl_label = "Batch Render"
     bl_description = "Batch renders the selected scene and its selected viewlayers"
-    bl_options = {"REGISTER","UNDO"}#
+    #bl_options = {"REGISTER","UNDO"}#
 
     running = False
 
-    #scenename: StringProperty(default="")
-    def invoke(self, context, event):
-        # bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
-        # context.region.tag_redraw()
-        return self.execute(context)
+    # def execute(self, context):
+        # scenes = bpy.data.scenes
+        # global renderscenename,bugmes
+        # bugmes=''
+        # running = True
 
-    def execute(self, context):
+        # # 检查是否已保存文件
+        # if not bpy.data.is_saved:
+        #     self.report({'ERROR'}, "Please save the file before render!")
+        #     bugmes='Please save the file before render!'
+        #     return {'CANCELLED'}  # 取消操作
+
+        # #def update_viewlayercamera():#检查视图层相机属性的相机是否是场景里的相机
+        # reset_camera = []
+        # for scene in scenes:
+        #     scenepro=scene.CPBR_Main_Props
+        #     if scenepro.cp_render_scene :
+        #         if not scenepro.cp_use_scene_camera: 
+        #             for layer in scene.view_layers:
+        #                 # 检查属性是否存在，不存在则创建
+        #                 if "CPBatchRender Viewlayers render_camera" in layer:
+        #                     if layer["CPBatchRender Viewlayers render_camera"]:
+        #                         pass
+        #                         # cameraname = layer["CPBatchRender Viewlayers render_camera"].name
+        #                         # hascamera=scene.objects.get(cameraname)
+        #                         # if not hascamera:
+        #                         #     reset_camera.append(f"Camera({cameraname}) not in {scene.name}\n")
+        #                         #     #print(f"Camera({cameraname}) not in {scene.name}")
+        #                         #     layer["CPBatchRender Viewlayers render_camera"] =  None
+                               
+        #                     else:
+        #                         reset_camera.append(f"{scene.name}({layer.name}) no camera!\n")
+        #                 else:
+        #                     reset_camera.append(f"{scene.name}({layer.name}) no camera-property!\n")  
+        #         else:
+        #             if scene.camera is None:
+        #                 reset_camera.append(f"{scene.name} no camera!\n")
+
+        #         if not scenepro.cp_use_scene_world: 
+        #             for layer in scene.view_layers:
+        #                 if "CPBatchRender Viewlayers render_world" in layer:
+        #                     if layer["CPBatchRender Viewlayers render_world"]:
+        #                         pass
+        #                     else:
+        #                         reset_camera.append(f"{scene.name}({layer.name}) no world!\n")
+        #                 else:
+        #                     reset_camera.append(f"{scene.name}({layer.name}) no world-property!\n")  
+        #         else:
+        #             if scene.world is None:
+        #                 reset_camera.append(f"{scene.name} no world!\n")
+
+        #         if not scenepro.cp_use_scene_resolution: 
+        #             for layer in scene.view_layers:
+        #                 if "CPBatchRender Viewlayers render_resolution" not in layer:
+        #                     reset_camera.append(f"{scene.name}({layer.name}) no render_resolution-property!\n")      
+        
+        # if reset_camera:
+        #     #self.report({'ERROR'}, f"{reset_camera}")
+        #     self.report({'ERROR'}, f"\n{''.join(reset_camera)}")
+        #     # 将列表中的所有元素连接成一个字符串
+        #     bugmes = '- '.join(reset_camera)
+        #     return {'FINISHED'}
+
+        # for window in bpy.context.window_manager.windows:
+        #     # 获取当前窗口的上下文，以便安全地操作区域
+        #     screen = window.screen
+        #     for area in screen.areas:
+        #         if area.type == 'VIEW_3D':
+        #             area.spaces[0].shading.type = 'SOLID'
+
+        # # 自动保存文件
+        # bpy.ops.wm.save_mainfile()
+
+        # # 记录当前场景和世界环境
+        # original_scene = bpy.context.scene
+        # original_world = original_scene.world
+
+        # running = True
+
+        # # r = [i for i in bpy.data.images if i.name == 'Render Result']
+        # # r = r[0]
+        
+        # # step = 0
+        # # total = len(r.render_slots)
+
+        # # for scene in scenes:
+        #     #     if scene.CPBR_Main_Props.cp_render_scene:
+        #     #         bpy.context.window.scene = scene
+        #     #         olduse_single_layer=scene.render.use_single_layer#
+        #     #         scene.render.use_single_layer= False##关闭渲染活动视图层
+        #     #         view_layers = scene.view_layers
+        #     #         #try:
+        #     #         r.render_slots.active_index = step
+        #     #         # print(len(view_layers))
+        #     #         for layer in view_layers:
+        #     #             if layer.use:#启用渲染 
+                            
+        #     #                 context.window.view_layer = layer
+        #     #         #         print(step+1)
+        #     #                 renderscenename="Rendering [" + scene.name + f"]... in solt[{step+1}]"
+        #     #                 print(renderscenename)
+        #     #                 #renderscenename="Rendering ["+scene.name+"]`s"  
+                            
+        #     #                 camera=bpy.data.scenes[scene.name].objects.get(layer["CPBatchRender Viewlayers render_camera"].name)
+        #     #                 bpy.data.scenes[scene.name].camera=camera
+
+                            
+        #     #                 bpy.ops.render.render(use_viewport=True, write_still=True)
+        #     #                 #bpy.ops.render.render(use_viewport=True, write_still=True, layer=layer.name, scene=scene.name)
+        #     #                 #'INVOKE_DEFAULT',
+
+        #     #         step += 1
+        #     #         if step>total:step = 0
+
+        #     #         scene.render.use_single_layer=olduse_single_layer
+
+
+        # # 初始化渲染列表
+        # render_list = []
+        # #global render_list
+        # # 遍历所有场景
+        # for scene in scenes:
+        #     if scene.CPBR_Main_Props.cp_render_scene:
+        #         # 遍历每个场景的视图层
+        #         for layer in scene.view_layers:
+        #             if layer.use:
+        #                 if scene.CPBR_Main_Props.cp_use_scene_camera:
+        #                     camera=scene.camera#用场景统一相机
+        #                 else: 
+        #                     # 获取相机名称
+        #                     camera_name = layer["CPBatchRender Viewlayers render_camera"].name
+        #                     # 从场景对象中获取相机对象
+        #                     camera = bpy.data.scenes[scene.name].objects.get(camera_name)
+
+        #                 if scene.CPBR_Main_Props.cp_use_scene_resolution:
+        #                     res_x,res_y=scene.render.resolution_x,scene.render.resolution_y
+        #                 else:
+        #                     res_x,res_y=layer["CPBatchRender Viewlayers render_resolution"]
+                            
+        #                 if scene.CPBR_Main_Props.cp_use_scene_world:
+        #                     world=scene.world
+        #                 else:
+        #                     world=layer["CPBatchRender Viewlayers render_world"]
+
+        #                 if camera and world and res_x and res_y:
+        #                     # 如果相机存在，则添加到渲染列表
+        #                     #render_list.setdefault(scene.name, []).append({
+        #                     # 如果相机存在，则添加到渲染列表
+        #                     render_list.append({
+        #                         'scene': scene,
+        #                         'layer': layer,
+        #                         'camera': camera,
+        #                         'res_x': res_x,
+        #                         'res_y': res_y,
+        #                         'world': world,
+        #                     })
+
+        # # 打印渲染列表以验证结果
+        # #print(render_list)
+        # # # 如果渲染列表不为空，则设置场景、视图层和相机
+        # if render_list:
+        #     savescene=context.scene
+        #         # #先检查所有场景的合成输出是否有
+        #         # bad_scene = set()#集合
+        #         # for entry in render_list:
+        #         #     has_outnode=False
+        #         #     has_layernote=False
+        #         #     if bpy.data.scenes[entry['scene'].name].use_nodes:
+        #         #         for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
+        #         #             if node.type=="R_LAYERS":
+        #         #                 has_layernote=True
+        #         #             if node.type == "OUTPUT_FILE" and node.mute==False and node.file_slots:#没有屏蔽并且有输出槽
+        #         #                 # 检查该节点的输入端口是否有任意一个是有连接的
+        #         #                 if any(input.is_linked for input in node.inputs):
+        #         #                     has_outnode = True
+
+        #         #     if has_outnode==False or has_layernote==False:
+        #         #         #self.report({'ERROR'}, "合成里输出节点没有!")
+        #         #         bad_scene.add(entry['scene'].name)#集合能避免重复添加
+        #         # if bad_scene:
+        #         #     self.report({'ERROR'}, f"{bad_scene}的合成树里要检查层节点/输出节点是否连接!")
+
+        #     #检查所有场景的合成输出 上面的是简单版本，这个是详细报告具体 
+        #     scene_problems = {}
+
+        #     for entry in render_list:
+        #         has_outnode = False
+        #         has_layernote = False
+        #         scene_name = entry['scene'].name
+
+        #         problems = []
+
+        #         if bpy.data.scenes[scene_name].use_nodes:
+        #             for node in bpy.data.scenes[scene_name].node_tree.nodes:
+        #                 if node.type == "R_LAYERS":
+        #                     has_layernote = True
+        #                 if node.type == "OUTPUT_FILE" and not node.mute and node.file_slots:
+        #                     # 检查该节点的输入端口是否有任意一个是有连接的
+        #                     if any(input.is_linked for input in node.inputs):
+        #                         has_outnode = True
+
+        #             if not has_layernote:
+        #                 problems.append("Missing RenderLayers node")#缺失渲染层节点
+        #             if not has_outnode:
+        #                 problems.append("Missing connected and enabled output node")#缺少连接的并启用的输出节点 
+
+        #         else:
+        #             problems.append("Need use nodes in compositor")
+
+
+        #         if problems:
+        #             if scene_name in scene_problems:
+        #                 scene_problems[scene_name].extend(problems)
+        #                 scene_problems[scene_name] = list(set(scene_problems[scene_name]))
+        #             else:
+        #                 scene_problems[scene_name] = problems
+
+        #     if scene_problems:#以下场景的合成树存在问题
+        #         report_message = "Some issues with the composition tree in scenes：\n"
+        #         for scene_name, problems in scene_problems.items():
+        #             report_message += f"\n- {scene_name}: "
+        #             report_message += ", ".join(problems)
+                
+        #         self.report({'ERROR'}, report_message)
+
+        #         bugmes=report_message
+
+        #         running = False
+        #         renderscenename=""
+        #         return {'FINISHED'}
+
+        #     bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
+        #     r = [i for i in bpy.data.images if i.name == 'Render Result']
+        #     r = r[0]
+        #     r.render_slots.active_index = 0
+        #     #先检查渲染槽和列表数量一样才对
+        #     #清空渲染槽名字
+        #     for solt in r.render_slots:
+        #         solt.name="Solt"#修改槽的名字
+        #     step=0
+
+        #     #鼠标显示进度
+        #     wm = bpy.context.window_manager
+        #     # progress from [0 - 1000]
+        #     tot = len(render_list)
+        #     wm.progress_begin(0, tot)
+        #     # for i in range(tot):
+        #     #     wm.progress_update(i)
+        #     # wm.progress_end()
+
+            
+        #     for entry in render_list:
+        #         i=step
+        #         if step==0:
+        #             i=tot/10#从10%开始显示
+        #         wm.progress_update(i)
+        #         r.render_slots.active_index = step#index if index<= total-1 else 0 #每个场景切换一个渲染槽就行了
+                
+        #         # # 设置场景
+        #         # context.window.scene = entry['scene']
+        #         # #bpy.data.scenes[entry['scene'].name].render.use_single_layer = True##关闭渲染活动视图层 这个没用，只有在视图里点击才有用后台用代码无用
+        #         # # 设置视图层
+        #         # context.window.view_layer = entry['layer']
+        #         # ##把该场景里不是这个视图的层的其它视图层都取消渲染
+        #         # for layer in entry['scene'].view_layers:
+        #         #     if layer==entry['layer']:
+        #         #         layer.use = True
+        #         #     else:
+        #         #         layer.use = False
+                    
+
+        #         # 设置场景相机
+        #         bpy.data.scenes[entry['scene'].name].camera = entry['camera']
+
+        #         bpy.data.scenes[entry['scene'].name].render.resolution_x = entry['res_x']
+        #         bpy.data.scenes[entry['scene'].name].render.resolution_y = entry['res_y']
+
+        #         bpy.data.scenes[entry['scene'].name].world = entry['world']
+
+        #         # 可以在这里添加渲染逻辑或其他操作
+        #         #print(r.render_slots[(int(r.render_slots.active_index))].name)
+        #         r.render_slots[(int(r.render_slots.active_index))].name=entry['scene'].name + "-"+ entry['layer'].name#修改槽的名字
+        #         bpy.context.view_layer.update()
+
+        #         ##如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
+                
+        #         if bpy.data.scenes[entry['scene'].name].use_nodes:
+        #             for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
+        #                 if node.type=="R_LAYERS":
+        #                     node.layer=entry['layer'].name
+                        
+        #         if context.scene.CPBR_Main_Props.use_auto_blenderpath:#保存到blend文件同目录下
+        #             path = Path(bpy.path.abspath('//'))  #保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path,//就代表blender文件路径
+        #         else:#自定义目录
+        #             path = Path(context.scene.CPBR_Main_Props.directory)
+        #         # 工程路径和blender文件名
+        #         blendPath = bpy.context.blend_data.filepath
+        #         blendName = bpy.path.basename(blendPath)
+        #         #blendName = blendName.replace(" ", "")#替换所有空格
+        #         #print("blendName",blendName)
+        #         # 项目名称，'/'和'_'切换可以文件和场景名建立文件夹管理
+        #         projectName = '未保存/'
+        #         if  blendPath!= '':
+        #             noblendname=os.path.splitext(blendName)[0]#去除.blend后缀的名字
+        #             cleanblendName = noblendname.strip()#strip是Python中用于字符串处理的方法之一，去除字符串开头和结尾的空白字符（空格、制表符、换行符等
+        #             #print("cleanblendName:::::::::",cleanblendName)
+        #             projectName = cleanblendName + '/'        
+
+        #         now = datetime.now()
+        #         base_path = path / (projectName + entry['scene'].name  + '_'+ entry['layer'].name  + '_'+ now.strftime('%Y%m%d_%H-%M-%S'))#
+                
+        #         bpy.data.scenes[entry['scene'].name].render.filepath = str(base_path)
+        #         if bpy.data.scenes[entry['scene'].name].use_nodes:
+        #             for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
+        #                 if node.type == "OUTPUT_FILE":
+        #                     node.base_path = str(base_path)
+        #                     #node.base_path = str(base_path / node.name)
+
+        #         #bpy.ops.render.render(use_viewport=True, write_still=True)#write_still是否保存属性保存面板里设置的保存
+        #         bpy.ops.render.render(use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
+        #         if bpy.context.scene.CPBR_Main_Props.auto_saverendertext:
+        #             renderfinishtime=datetime.now()
+        #             auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
+
+
+
+        #         step += 1
+        #         if step>total:step = 0
+
+        #         #print(f"渲染：{entry['scene'].name} /// {entry['layer'].name}")
+
+        #     # bpy.app.handlers.render_complete.append(batchrender_blend_post_render_58683)
+        #     # print(f"1渲染列表数量：{len(render_list)}")
+        #     # r.render_slots.active_index = 0
+        #     # #batchrender_blend_post_render_58683()
+        #     # # 获取第一个键值对
+        #     # first_entry = render_list[0]
+            
+        #     # acsolt = r.render_slots.active_index
+        #     # # 处理第一个键值对
+            
+        #     # r.render_slots.active_index = acsolt + 1
+        #     # # 设置场景
+        #     # bpy.context.window.scene = first_entry['scene']
+        #     # bpy.data.scenes[first_entry['scene'].name].render.use_single_layer = True  # 关闭渲染活动视图层
+        #     # # 设置视图层
+        #     # bpy.context.window.view_layer = first_entry['layer']
+        #     # # 设置场景相机
+        #     # bpy.data.scenes[first_entry['scene'].name].camera = first_entry['camera']
+        #     # # 可以在这里添加渲染逻辑或其他操作
+        #     # # print(r.render_slots[(int(r.render_slots.active_index))].name)
+        #     # r.render_slots[(int(r.render_slots.active_index))].name = first_entry['scene'].name  # 修改槽的名字
+
+        #     # # 删除 render_list 中的第一个项
+        #     # render_list.pop(0)
+
+        #     # bpy.ops.render.render(use_viewport=True, write_still=True)
+
+
+        #     # print(f"2渲染列表数量：{len(render_list)}")    
+
+        #     wm.progress_end()
+
+        #     # # # 设置场景
+        #     # context.window.scene = savescene
+
+        # #render_list = {}
+        # running = False
+        # bpy.context.scene.CPBR_Main_Props.cp_batchrendering = False
+        # #bpy.app.timers.register(update_ui)
+        # renderscenename=""
+
+        # return {'FINISHED'}
+
+    #提前检查所有场景是否相同渲染器
+    def invoke(self, context, event):
         scenes = bpy.data.scenes
-        global renderscenename,bugmes
-        bugmes=''
+        global renderscenename, bugmes
+        bugmes = ''
         running = True
-        bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
 
         # 检查是否已保存文件
         if not bpy.data.is_saved:
             self.report({'ERROR'}, "Please save the file before render!")
-            bugmes='Please save the file before render!'
+            bugmes = 'Please save the file before render!'
             return {'CANCELLED'}  # 取消操作
 
-        #def update_viewlayercamera():#检查视图层相机属性的相机是否是场景里的相机
+        # 检查视图层相机属性的相机是否是场景里的相机
         reset_camera = []
         for scene in scenes:
-            scenepro=scene.CPBR_Main_Props
-            if scenepro.cp_render_scene :
-                if not scenepro.cp_use_scene_camera: 
+            scenepro = scene.CPBR_Main_Props
+            if scenepro.cp_render_scene:
+                if not scenepro.cp_use_scene_camera:
                     for layer in scene.view_layers:
                         # 检查属性是否存在，不存在则创建
                         if "CPBatchRender Viewlayers render_camera" in layer:
                             if layer["CPBatchRender Viewlayers render_camera"]:
                                 pass
-                                # cameraname = layer["CPBatchRender Viewlayers render_camera"].name
-                                # hascamera=scene.objects.get(cameraname)
-                                # if not hascamera:
-                                #     reset_camera.append(f"Camera({cameraname}) not in {scene.name}\n")
-                                #     #print(f"Camera({cameraname}) not in {scene.name}")
-                                #     layer["CPBatchRender Viewlayers render_camera"] =  None
-                               
                             else:
                                 reset_camera.append(f"{scene.name}({layer.name}) no camera!\n")
                         else:
-                            reset_camera.append(f"{scene.name}({layer.name}) no camera-property!\n")  
+                            reset_camera.append(f"{scene.name}({layer.name}) no camera-property!\n")
                 else:
                     if scene.camera is None:
                         reset_camera.append(f"{scene.name} no camera!\n")
 
-                if not scenepro.cp_use_scene_world: 
+                if not scenepro.cp_use_scene_world:
                     for layer in scene.view_layers:
                         if "CPBatchRender Viewlayers render_world" in layer:
                             if layer["CPBatchRender Viewlayers render_world"]:
@@ -2180,32 +2589,20 @@ class CPBR_OT_BatchRender(Operator):
                             else:
                                 reset_camera.append(f"{scene.name}({layer.name}) no world!\n")
                         else:
-                            reset_camera.append(f"{scene.name}({layer.name}) no world-property!\n")  
+                            reset_camera.append(f"{scene.name}({layer.name}) no world-property!\n")
                 else:
                     if scene.world is None:
                         reset_camera.append(f"{scene.name} no world!\n")
 
-                if not scenepro.cp_use_scene_resolution: 
+                if not scenepro.cp_use_scene_resolution:
                     for layer in scene.view_layers:
                         if "CPBatchRender Viewlayers render_resolution" not in layer:
-                            reset_camera.append(f"{scene.name}({layer.name}) no render_resolution-property!\n")      
-        
+                            reset_camera.append(f"{scene.name}({layer.name}) no render_resolution-property!\n")
+
         if reset_camera:
-            #self.report({'ERROR'}, f"{reset_camera}")
             self.report({'ERROR'}, f"\n{''.join(reset_camera)}")
-            # 将列表中的所有元素连接成一个字符串
             bugmes = '- '.join(reset_camera)
             return {'FINISHED'}
-
-        for window in bpy.context.window_manager.windows:
-            # 获取当前窗口的上下文，以便安全地操作区域
-            screen = window.screen
-            for area in screen.areas:
-                if area.type == 'VIEW_3D':
-                    area.spaces[0].shading.type = 'SOLID'
-
-        # 自动保存文件
-        bpy.ops.wm.save_mainfile()
 
         # 记录当前场景和世界环境
         original_scene = bpy.context.scene
@@ -2213,47 +2610,8 @@ class CPBR_OT_BatchRender(Operator):
 
         running = True
 
-        r = [i for i in bpy.data.images if i.name == 'Render Result']
-        r = r[0]
-        
-        step = 0
-        total = len(r.render_slots)
-
-        # for scene in scenes:
-            #     if scene.CPBR_Main_Props.cp_render_scene:
-            #         bpy.context.window.scene = scene
-            #         olduse_single_layer=scene.render.use_single_layer#
-            #         scene.render.use_single_layer= False##关闭渲染活动视图层
-            #         view_layers = scene.view_layers
-            #         #try:
-            #         r.render_slots.active_index = step
-            #         # print(len(view_layers))
-            #         for layer in view_layers:
-            #             if layer.use:#启用渲染 
-                            
-            #                 context.window.view_layer = layer
-            #         #         print(step+1)
-            #                 renderscenename="Rendering [" + scene.name + f"]... in solt[{step+1}]"
-            #                 print(renderscenename)
-            #                 #renderscenename="Rendering ["+scene.name+"]`s"  
-                            
-            #                 camera=bpy.data.scenes[scene.name].objects.get(layer["CPBatchRender Viewlayers render_camera"].name)
-            #                 bpy.data.scenes[scene.name].camera=camera
-
-                            
-            #                 bpy.ops.render.render(use_viewport=True, write_still=True)
-            #                 #bpy.ops.render.render(use_viewport=True, write_still=True, layer=layer.name, scene=scene.name)
-            #                 #'INVOKE_DEFAULT',
-
-            #         step += 1
-            #         if step>total:step = 0
-
-            #         scene.render.use_single_layer=olduse_single_layer
-
-
         # 初始化渲染列表
         render_list = []
-        #global render_list
         # 遍历所有场景
         for scene in scenes:
             if scene.CPBR_Main_Props.cp_render_scene:
@@ -2261,26 +2619,24 @@ class CPBR_OT_BatchRender(Operator):
                 for layer in scene.view_layers:
                     if layer.use:
                         if scene.CPBR_Main_Props.cp_use_scene_camera:
-                            camera=scene.camera#用场景统一相机
-                        else: 
+                            camera = scene.camera  # 用场景统一相机
+                        else:
                             # 获取相机名称
                             camera_name = layer["CPBatchRender Viewlayers render_camera"].name
                             # 从场景对象中获取相机对象
                             camera = bpy.data.scenes[scene.name].objects.get(camera_name)
 
                         if scene.CPBR_Main_Props.cp_use_scene_resolution:
-                            res_x,res_y=scene.render.resolution_x,scene.render.resolution_y
+                            res_x, res_y = scene.render.resolution_x, scene.render.resolution_y
                         else:
-                            res_x,res_y=layer["CPBatchRender Viewlayers render_resolution"]
-                            
+                            res_x, res_y = layer["CPBatchRender Viewlayers render_resolution"]
+
                         if scene.CPBR_Main_Props.cp_use_scene_world:
-                            world=scene.world
+                            world = scene.world
                         else:
-                            world=layer["CPBatchRender Viewlayers render_world"]
+                            world = layer["CPBatchRender Viewlayers render_world"]
 
                         if camera and world and res_x and res_y:
-                            # 如果相机存在，则添加到渲染列表
-                            #render_list.setdefault(scene.name, []).append({
                             # 如果相机存在，则添加到渲染列表
                             render_list.append({
                                 'scene': scene,
@@ -2291,117 +2647,136 @@ class CPBR_OT_BatchRender(Operator):
                                 'world': world,
                             })
 
-        # 打印渲染列表以验证结果
-        #print(render_list)
-        # # 如果渲染列表不为空，则设置场景、视图层和相机
-        if render_list:
-            # bpy.context.scene.CPBR_Main_Props.cp_batchrendering=True
-            savescene=context.scene
-                # #先检查所有场景的合成输出是否有
-                # bad_scene = set()#集合
-                # for entry in render_list:
-                #     has_outnode=False
-                #     has_layernote=False
-                #     if bpy.data.scenes[entry['scene'].name].use_nodes:
-                #         for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
-                #             if node.type=="R_LAYERS":
-                #                 has_layernote=True
-                #             if node.type == "OUTPUT_FILE" and node.mute==False and node.file_slots:#没有屏蔽并且有输出槽
-                #                 # 检查该节点的输入端口是否有任意一个是有连接的
-                #                 if any(input.is_linked for input in node.inputs):
-                #                     has_outnode = True
+        # 检查所有场景的合成输出
+        scene_problems = {}
+        render_engine = []
+        # print(render_list)
+        for entry in render_list:
+            has_outnode = False
+            has_layernote = False
+            scene_name = entry['scene'].name
 
-                #     if has_outnode==False or has_layernote==False:
-                #         #self.report({'ERROR'}, "合成里输出节点没有!")
-                #         bad_scene.add(entry['scene'].name)#集合能避免重复添加
-                # if bad_scene:
-                #     self.report({'ERROR'}, f"{bad_scene}的合成树里要检查层节点/输出节点是否连接!")
+            problems = []
 
-            #检查所有场景的合成输出 上面的是简单版本，这个是详细报告具体 
-            scene_problems = {}
+            if bpy.data.scenes[scene_name].use_nodes:
+                for node in bpy.data.scenes[scene_name].node_tree.nodes:
+                    if node.type == "R_LAYERS":
+                        has_layernote = True
+                    if node.type == "OUTPUT_FILE" and not node.mute and node.file_slots:
+                        # 检查该节点的输入端口是否有任意一个是有连接的
+                        if any(input.is_linked for input in node.inputs):
+                            has_outnode = True
 
-            for entry in render_list:
-                has_outnode = False
-                has_layernote = False
-                scene_name = entry['scene'].name
+                if not has_layernote:
+                    problems.append("Missing RenderLayers node")  # 缺失渲染层节点
+                if not has_outnode:
+                    problems.append("Missing connected and enabled output node")  # 缺少连接的并启用的输出节点
 
-                problems = []
+            else:
+                problems.append("Need use nodes in compositor")
 
-                if bpy.data.scenes[scene_name].use_nodes:
-                    for node in bpy.data.scenes[scene_name].node_tree.nodes:
-                        if node.type == "R_LAYERS":
-                            has_layernote = True
-                        if node.type == "OUTPUT_FILE" and not node.mute and node.file_slots:
-                            # 检查该节点的输入端口是否有任意一个是有连接的
-                            if any(input.is_linked for input in node.inputs):
-                                has_outnode = True
-
-                    if not has_layernote:
-                        problems.append("Missing RenderLayers node")#缺失渲染层节点
-                    if not has_outnode:
-                        problems.append("Missing connected and enabled output node")#缺少连接的并启用的输出节点 
-
+            if problems:
+                if scene_name in scene_problems:
+                    scene_problems[scene_name].extend(problems)
+                    scene_problems[scene_name] = list(set(scene_problems[scene_name]))
                 else:
-                    problems.append("Need use nodes in compositor")
+                    scene_problems[scene_name] = problems
+
+            # print(scene_name)
+            # print(bpy.data.scenes[scene_name].render.engine)
+            if bpy.data.scenes[scene_name].render.engine not in render_engine:
+                render_engine.append(bpy.data.scenes[scene_name].render.engine)
+
+        if scene_problems:  # 以下场景的合成树存在问题
+            report_message = "Some issues with the composition tree in scenes：\n"
+            for scene_name, problems in scene_problems.items():
+                report_message += f"\n- {scene_name}: "
+                report_message += ", ".join(problems)
+
+            self.report({'ERROR'}, report_message)
+
+            bugmes = report_message
+
+            running = False
+            renderscenename = ""
+            return {'FINISHED'}
+
+        self.render_list = render_list
+        # print(render_engine)
+        if len(render_engine)>1:
+            wm = context.window_manager
+            return wm.invoke_props_dialog(self, width=400)  #调整width参数来控制弹出面板的宽度
+  
+        if render_list:
+            for window in bpy.context.window_manager.windows:
+                # 获取当前窗口的上下文，以便安全地操作区域
+                screen = window.screen
+                for area in screen.areas:
+                    if area.type == 'VIEW_3D':
+                        area.spaces[0].shading.type = 'SOLID'
+            context.area.tag_redraw()
+            # 自动保存文件
+            bpy.ops.wm.save_mainfile()
+            return self.execute(context)
+
+        return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        render_list = self.render_list
+        shown_scenes = set()  # 用于记录已经显示过的场景名称
+        r = layout.row(align=True)
+        r.scale_y = 1.5
+        r.alert = True
+        r.alignment = 'CENTER'.upper()#'EXPAND', 'LEFT', 'CENTER', 'RIGHT'
+        r.label(text="Use different engine for batch rendering?", icon='ERROR')
+        layout.separator()
+        for entry in render_list:
+            scene_name = entry['scene'].name
+            if scene_name not in shown_scenes:
+                row = layout.row(align=True)
+                row.label(text=scene_name, icon='SCENE_DATA')
+                row.prop(bpy.data.scenes[scene_name].render, "engine",text="")
+                row.prop(bpy.data.scenes[scene_name].cycles, "feature_set",text="")
+                row.prop(bpy.data.scenes[scene_name].cycles, "device",text="")
+                shown_scenes.add(scene_name)  # 将场景名称添加到集合中
+        layout.separator()
+        layout.separator()
 
 
-                if problems:
-                    if scene_name in scene_problems:
-                        scene_problems[scene_name].extend(problems)
-                        scene_problems[scene_name] = list(set(scene_problems[scene_name]))
-                    else:
-                        scene_problems[scene_name] = problems
+    def execute(self, context):
+        global renderscenename, bugmes
+        bugmes = ''
+        running = True
 
-            if scene_problems:#以下场景的合成树存在问题
-                report_message = "Some issues with the composition tree in scenes：\n"
-                for scene_name, problems in scene_problems.items():
-                    report_message += f"\n- {scene_name}: "
-                    report_message += ", ".join(problems)
-                
-                self.report({'ERROR'}, report_message)
+        render_list = self.render_list
 
-                bugmes=report_message
+        if render_list:
+            savescene = context.scene
 
-                running = False
-                renderscenename=""
-                return {'FINISHED'}
-
+            bpy.context.scene.CPBR_Main_Props.cp_batchrendering = True
+            r = [i for i in bpy.data.images if i.name == 'Render Result']
+            r = r[0]
             r.render_slots.active_index = 0
-            #先检查渲染槽和列表数量一样才对
-            #清空渲染槽名字
-            for solt in r.render_slots:
-                solt.name="Solt"#修改槽的名字
-            step=0
 
-            #鼠标显示进度
+            # 清空渲染槽名字
+            for solt in r.render_slots:
+                solt.name = "Solt"  # 修改槽的名字
+
+            step = 0
+            total = len(r.render_slots)
+
+            # 鼠标显示进度
             wm = bpy.context.window_manager
-            # progress from [0 - 1000]
             tot = len(render_list)
             wm.progress_begin(0, tot)
-            # for i in range(tot):
-            #     wm.progress_update(i)
-            # wm.progress_end()
 
-            
             for entry in render_list:
-                i=step
-                if step==0:
-                    i=tot/10#从10%开始显示
+                i = step
+                if step == 0:
+                    i = tot / 10  # 从10%开始显示
                 wm.progress_update(i)
-                r.render_slots.active_index = step#index if index<= total-1 else 0 #每个场景切换一个渲染槽就行了
-                
-                # # 设置场景
-                # context.window.scene = entry['scene']
-                # #bpy.data.scenes[entry['scene'].name].render.use_single_layer = True##关闭渲染活动视图层 这个没用，只有在视图里点击才有用后台用代码无用
-                # # 设置视图层
-                # context.window.view_layer = entry['layer']
-                # ##把该场景里不是这个视图的层的其它视图层都取消渲染
-                # for layer in entry['scene'].view_layers:
-                #     if layer==entry['layer']:
-                #         layer.use = True
-                #     else:
-                #         layer.use = False
-                    
+                r.render_slots.active_index = step  # 每个场景切换一个渲染槽就行了
 
                 # 设置场景相机
                 bpy.data.scenes[entry['scene'].name].camera = entry['camera']
@@ -2412,20 +2787,19 @@ class CPBR_OT_BatchRender(Operator):
                 bpy.data.scenes[entry['scene'].name].world = entry['world']
 
                 # 可以在这里添加渲染逻辑或其他操作
-                #print(r.render_slots[(int(r.render_slots.active_index))].name)
-                r.render_slots[(int(r.render_slots.active_index))].name=entry['scene'].name + "-"+ entry['layer'].name#修改槽的名字
+                r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
                 bpy.context.view_layer.update()
 
-                ##如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
+                ## 如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
                 
                 if bpy.data.scenes[entry['scene'].name].use_nodes:
                     for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
-                        if node.type=="R_LAYERS":
-                            node.layer=entry['layer'].name
+                        if node.type == "R_LAYERS":
+                            node.layer = entry['layer'].name
                         
-                if context.scene.CPBR_Main_Props.use_auto_blenderpath:#保存到blend文件同目录下
-                    path = Path(bpy.path.abspath('//'))  #保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path,//就代表blender文件路径
-                else:#自定义目录
+                if context.scene.CPBR_Main_Props.use_auto_blenderpath:  # 保存到blend文件同目录下
+                    path = Path(bpy.path.abspath('//'))  # 保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path, //就代表blender文件路径
+                else:  # 自定义目录
                     path = Path(context.scene.CPBR_Main_Props.directory)
                 # 工程路径和blender文件名
                 blendPath = bpy.context.blend_data.filepath
@@ -2463,49 +2837,13 @@ class CPBR_OT_BatchRender(Operator):
 
                 #print(f"渲染：{entry['scene'].name} /// {entry['layer'].name}")
 
-            # bpy.app.handlers.render_complete.append(batchrender_blend_post_render_58683)
-            # print(f"1渲染列表数量：{len(render_list)}")
-            # r.render_slots.active_index = 0
-            # #batchrender_blend_post_render_58683()
-            # # 获取第一个键值对
-            # first_entry = render_list[0]
-            
-            # acsolt = r.render_slots.active_index
-            # # 处理第一个键值对
-            
-            # r.render_slots.active_index = acsolt + 1
-            # # 设置场景
-            # bpy.context.window.scene = first_entry['scene']
-            # bpy.data.scenes[first_entry['scene'].name].render.use_single_layer = True  # 关闭渲染活动视图层
-            # # 设置视图层
-            # bpy.context.window.view_layer = first_entry['layer']
-            # # 设置场景相机
-            # bpy.data.scenes[first_entry['scene'].name].camera = first_entry['camera']
-            # # 可以在这里添加渲染逻辑或其他操作
-            # # print(r.render_slots[(int(r.render_slots.active_index))].name)
-            # r.render_slots[(int(r.render_slots.active_index))].name = first_entry['scene'].name  # 修改槽的名字
-
-            # # 删除 render_list 中的第一个项
-            # render_list.pop(0)
-
-            # bpy.ops.render.render(use_viewport=True, write_still=True)
-
-
-            # print(f"2渲染列表数量：{len(render_list)}")    
-
             wm.progress_end()
 
-            # # # 设置场景
-            # context.window.scene = savescene
-
-        #render_list = {}
         running = False
         bpy.context.scene.CPBR_Main_Props.cp_batchrendering = False
-        #bpy.app.timers.register(update_ui)
         renderscenename=""
 
         return {'FINISHED'}
-
 
 # #保存渲染记录auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'])
 def auto_saverendertext(filepath, scene, view_layer, camera, world, x, y, strattime, renderfinishtime):
@@ -3022,7 +3360,6 @@ class TranslationHelper():
     def unregister(self):
         bpy.app.translations.unregister(self.name)
 
-
 zhdata = {
     # ----------------------------------------------------根据物体不同自动切换属性值---------------------------------------------------- #
     "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene).": 
@@ -3036,7 +3373,7 @@ zhdata = {
     'Add prop to objs using this material': '有使用该材质的物体缺失属性!',#有使用该材质的物体缺失属性
     'Add/Select Node': '添加/选中属性切换节点',
     'Material by N-Viewlayer(Scene)': '根据视图层(场景)切换材质',
-    'Add property to viewlayer/Refresh nodes': '给视图层添加属性/刷新节点',
+    'Add node/Refresh node/Add property to viewlayer': '添加节点/刷新节点/给视图层添加属性',
     'There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"': '有多个Viewlayer Group属性的节点树,它们都会被自动刷新,把不用自动刷新的节点树属性改为默认',
 
     'Sets the property color of selected objects': '设置所有选中物体(活动物体)的颜色属性',
@@ -3059,7 +3396,7 @@ zhdata = {
     # ----------------------------------------------------视图层批量渲染---------------------------------------------------- #
     'Screenshot preview': '截取预览图',
     'Viewlayers List:': '所有视图层列表:',
-    'Render to a folder with the same name in BL file directory': '渲染到BL文件目录下同名文件夹里',
+    'Save to BL file`s directory': '保存到BL文件目录下同名文件夹里',
     'Batch rendering is saved with the compositor\'s output node!': '批量渲染用合成器的输出节点保存!',
     'Only need one viewlayer node and one output node in compositor!': '每个场景合成器里只需一个视图层节点和输出节点!',
     'Other plugins that automatically set the path of the output node will affect the save path!': '其它能自动设置输出节点路径的插件会影响保存路径!',
@@ -3070,6 +3407,8 @@ zhdata = {
     'Screenshot thumbnails for the viewlayer': '以当前着色模式为视图层截取缩略图',
     'Only Wireframe/Solid/Material Preview mode is supported, not render preview!': '不支持渲染模式下的截图，其它三种支持',
     
+    'Open Save Folder': '打开渲染文件夹',
+    'Use different engine for batch rendering?': '你确定要用不同的渲染器来批量渲染么!',
     'Render this scene in batch rendering': '是否在批量渲染中渲染该场景',
     'All viewlayers of the scene rendered by scene camera': '该场景的所有视图层统一使用场景相机渲染',
     'All viewlayers of the scene rendered by scene resolution': '该场景的所有视图层统一使用场景分辨率',
@@ -3085,6 +3424,35 @@ zhdata = {
 
 CPBRender_zh_CN = TranslationHelper('CPBRender_zh_CN', zhdata)
 CPBRender_zh_HANS = TranslationHelper('CPBRender_zh_HANS', zhdata, lang='zh_HANS')
+
+
+###⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊用msgbus.subscribe_rna监听⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊
+    # def keep_nodetree_name():
+    #     print("upname")
+    #     t=[]
+    #     for node_tree in bpy.data.node_groups:
+    #         if node_tree.Matby_N_Colors_type=='Viewlayer Prop':
+    #                 t.append(node_tree)
+    #     # if len(t)==1:
+    #     if t:
+    #         t[0].name=".CP_ViewLayer_Material"
+    #         if len(t)>1:
+    #             makejustone_viewlayer_prop_nodetree()
+
+    # owner = object()
+    # def register_msgbus(owner):
+    #     print("register_msgbus")
+    #     # 订阅节点树名字修改后自动运行   没用
+    #     bpy.msgbus.subscribe_rna(
+    #         key=(bpy.types.NodeTree, 'name'),
+    #         owner=owner, args=(), 
+    #         notify=keep_nodetree_name)
+    #     bpy.msgbus.subscribe_rna(
+    #         key=(bpy.types.NodeGroup, 'name'), #
+    #         owner=owner, args=(), 
+    #         notify=keep_NodeGroup_name)
+
+###⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈用msgbus.subscribe_rna监听⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈
 
 
 classes = (
@@ -3114,6 +3482,9 @@ classes = (
   
 
 def register():
+    if bpy.app.version < (4, 0, 0):
+        print('Only Blender 4.0 and later versions are supported')
+        return
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -3131,6 +3502,7 @@ def register():
         default="Default",
         )
 
+
     #bpy.app.translations.register(__name__, langs)
     if bpy.app.version < (4, 0, 0):
         CPBRender_zh_CN.register()
@@ -3145,7 +3517,6 @@ def unregister():
     del bpy.types.Scene.CPBR_Main_Props
     del bpy.types.NodeTree.Matby_N_Colors_type
     #bpy.app.translations.unregister(__name__)
-
     if bpy.app.version < (4, 0, 0):
         CPBRender_zh_CN.unregister()
     else:
