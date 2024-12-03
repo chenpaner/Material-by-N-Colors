@@ -38,10 +38,7 @@ from bpy.props import (
     EnumProperty,#枚举列表
     )
 
-if bpy.app.version >= (4, 1):
-    from bpy.app.translations import pgettext_rpt as rpt_###这个让函数可用字典翻译的，4.1里要打开语言下的影响报告才有用
-else:
-    from bpy.app.translations import pgettext_tip as rpt_
+from bpy.app.translations import pgettext_iface as iface_
 
 import textwrap
 
@@ -404,7 +401,10 @@ class SNA_OT_SelectObjectsWithSameAttribute(Operator):
         for obj in bpy.context.scene.objects:
             # 检查物体是否具有指定的属性并且属性值与活动物体的属性值几乎相同
             if attribute_name in obj and are_colors_almost_equal(obj.get(attribute_name), attribute_value):
-                obj.select_set(True)
+                try:
+                    obj.select_set(True)
+                except:
+                    pass
 
         return {'FINISHED'}
 
@@ -427,7 +427,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
         # if data and data.tree_type == "ShaderNodeTree" and data.edit_tree:
         #     # 检查当前节点树是否不同于世界节点树
         #     if data.node_tree and data.node_tree != world.node_tree:
-            return True
+            return snode.shader_type == 'OBJECT'
         return False
         #len(bpy.context.selected_objects) > 0 and
 
@@ -439,66 +439,68 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
         #     return
 
         layout = self.layout
-        obj = bpy.context.active_object
+        obj = bpy.context.view_layer.objects.active
 
         panel=True
-        if context.space_data.shader_type == 'OBJECT':
-            if bpy.app.version >= (4, 1):
-                header, panel = layout.panel("my_panel_a", default_closed=False)#bl4.1
-                header.label(text="Material by N-Objects",icon="MESH_MONKEY")
-            else:
-                r = layout.row(heading='', align=False)
-                r.alignment = 'CENTER'.upper()
-                r.label(text="Material by N-Objects")
-            if panel:
-                layout = layout.box()
-                if obj and obj.active_material and obj.active_material==bpy.context.material:
-                    tex=rpt_("Select all use [%s] objs") % (bpy.context.material.name)
-                    op = layout.operator('object.select_linked', text=tex, icon_value=256, emboss=True, depress=False)
-                    op.type = 'MATERIAL'
+        # if context.space_data.shader_type == 'OBJECT':
+        if bpy.app.version >= (4, 1):
+            header, panel = layout.panel("my_panel_a", default_closed=False)#bl4.1
+            header.label(text="Material by N-Objects",icon="MESH_MONKEY")
+        else:
+            r = layout.row(heading='', align=False)
+            r.alignment = 'CENTER'.upper()
+            r.label(text="Material by N-Objects")
+        if panel:
+            layout = layout.box()
+            if obj and obj.active_material and obj.active_material==bpy.context.material:
+                tex=iface_("Select all use [%s] objs") % (bpy.context.material.name)
+                op = layout.operator('object.select_linked', text=tex, icon_value=256, emboss=True, depress=False)
+                op.type = 'MATERIAL'
 
-                if obj and ("CP Custom colors" in obj or "CP Custom float" in obj):
-                    box_9C21B = layout.box()
-                    co=box_9C21B.column(align=True, heading='', heading_ctxt='', translate=True)
-                    co.label(text='Set objs`s property to be equal to the active object\'s property value.', icon_value=551)
-                    row_3835D = co.row(heading='', align=False)
-                    row_3835D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
-                    #row_3835D.label(text='选择和活动物体一样材质，并且属性的颜色一样的物体', icon_value=256)
-                    row_3835D.operator('sna.select_same_attribute', text='', icon_value=256, emboss=True, depress=False)
+            if obj and ("CP Custom colors" in obj or "CP Custom float" in obj):
+                box_CCCCC = layout.box()
+                col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
+                col.label(text='Edit selected obj\'s prop', icon="STICKY_UVS_LOC")
+                row_D = col.row(heading='', align=False)
+                row_D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
+                op=row_D.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
+                op.prop_name="CP Custom colors"
 
-                    co.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
+                row_E = col.row(heading='', align=False)
+                row_E.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
+                op=row_E.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
+                op.prop_name="CP Custom float"
 
-                    box_CCCCC = layout.box()
-                    col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
-                    col.label(text='Set properties of all selected objects (active object)', icon="STICKY_UVS_LOC")
-                    row_D = col.row(heading='', align=False)
-                    row_D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
-                    op=row_D.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
-                    op.prop_name="CP Custom colors"
 
-                    row_E = col.row(heading='', align=False)
-                    row_E.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
-                    op=row_E.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
-                    op.prop_name="CP Custom float"
+                box_9C21B = layout.box()
+                co=box_9C21B.column(align=True, heading='', heading_ctxt='', translate=True)
+                co.label(text='Edit prop for objs matching active obj\'s prop value', icon_value=551)
+                row_3835D = co.row(heading='', align=False)
+                row_3835D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
+                #row_3835D.label(text='选择和活动物体一样材质，并且属性的颜色一样的物体', icon_value=256)
+                row_3835D.operator('sna.select_same_attribute', text='', icon_value=256, emboss=True, depress=False)
 
-                row = layout.row(heading='', align=True)
-                row.scale_y = 1.0
-                icon="ADD"
-                all_objects = bpy.data.objects
-                objects_with_active_material = []
-                for obj in all_objects:
-                    if any(slot.material == bpy.context.material for slot in obj.material_slots):##bpy.context.material
-                        objects_with_active_material.append(obj)
-                tex='Add/Select Node'
-                for obj in objects_with_active_material:
-                    if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
-                        row.alert = True
-                        icon="FILE_REFRESH"
-                        row.scale_y = 2.0
-                        tex='Add prop to objs using this material'#给使用该材质的物体添加属性
-                        break  # 只要有一个满足条件就停止循环
+                co.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
 
-                row.operator('wm.add_prop_and_attributenode_285d0', text=rpt_(tex), icon=icon, emboss=True, depress=False)
+
+            row = layout.row(heading='', align=True)
+            row.scale_y = 1.0
+            icon="ADD"
+            all_objects = bpy.data.objects
+            objects_with_active_material = []
+            for obj in all_objects:
+                if any(slot.material == bpy.context.material for slot in obj.material_slots):##bpy.context.material
+                    objects_with_active_material.append(obj)
+            tex='Add/Select Node'
+            for obj in objects_with_active_material:
+                if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
+                    row.alert = True
+                    icon="FILE_REFRESH"
+                    row.scale_y = 2.0
+                    tex='Add prop to objs using this material'#给使用该材质的物体添加属性
+                    break  # 只要有一个满足条件就停止循环
+
+            row.operator('wm.add_prop_and_attributenode_285d0', text=iface_(tex), icon=icon, emboss=True, depress=False)
 
 
         scenes = bpy.data.scenes
@@ -520,7 +522,20 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
             box = layout.box()
             row = box.row(heading='', align=False)
             row.scale_y = 1.5
-            row.operator('wm.add_prop_and_node_to_viewlayer', text='Add node/Refresh node/Add property to viewlayer', icon="RENDER_RESULT", emboss=True, depress=False)
+            t='Add node/Refresh node/Add property to viewlayer'
+            # 判断场景数视图层数是否和节点组的面板数量一样，不一样就警告提示要刷新
+
+            # 使用列表推导式和 sum 函数计算视图层总数
+            vl_count = sum(len(scene.view_layers) for scene in bpy.data.scenes)
+            nodes = context.space_data.edit_tree.nodes
+            node_group = next((node for node in nodes if node.bl_idname == 'ShaderNodeGroup' and node.node_tree and node.node_tree.Matby_N_Colors_type == 'Viewlayer Prop'), None)
+            # node_group = next((ng for ng in bpy.data.node_groups if ng.Matby_N_Colors_type == 'Viewlayer Prop'), None)#这个是在bl所有节点树里查找
+            if node_group:
+                panels = sum(1 for item in node_group.node_tree.interface.items_tree if item.item_type == 'PANEL')
+                if panels != vl_count:
+                    row.alert = True
+                    t='Refresh node'
+            row.operator('wm.add_prop_and_node_to_viewlayer', text=t, icon="RENDER_RESULT", emboss=True, depress=False)
 
             return
             # if len(viewlayer_prop_nodes)>1:
@@ -529,7 +544,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
                 # width = context.region.width#- 45- 20 #N面板的宽度
                 # ui_scale = bpy.context.preferences.view.ui_scale
                 # fontCount = math.floor(width / (fontsize*ui_scale* 1.5)) # 调整为中文字符宽度 这样中文才会自动换行##fontCount = floor(width / (fontsize))#+ 10#fontsize = 12
-                # textTowrap = rpt_("There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"" )
+                # textTowrap = iface_("There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"" )
                 # wrapp = textwrap.TextWrapper(width=fontCount) #50 = maximum length       
                 # wList = wrapp.wrap(text=textTowrap)#对textTowrap中的单独段落自动换行以使每行长度最多为 width 个字符
 
@@ -736,7 +751,7 @@ class SNA_PT_MATERIAL_BY_NScene_85AF2(Panel):
             width = context.region.width#- 45- 20 #N面板的宽度
             ui_scale = bpy.context.preferences.view.ui_scale
             fontCount = math.floor(width / (fontsize*ui_scale* 1.5)) # 调整为中文字符宽度 这样中文才会自动换行##fontCount = floor(width / (fontsize))#+ 10#fontsize = 12
-            textTowrap = rpt_("Blender里有多个Scene Prop Group属性的节点树,它们都会被自动修改,把不用自动刷新的节点树属性改为默认." )
+            textTowrap = iface_("Blender里有多个Scene Prop Group属性的节点树,它们都会被自动修改,把不用自动刷新的节点树属性改为默认." )
             wrapp = textwrap.TextWrapper(width=fontCount) #50 = maximum length       
             wList = wrapp.wrap(text=textTowrap)#对textTowrap中的单独段落自动换行以使每行长度最多为 width 个字符
 
@@ -1131,7 +1146,7 @@ class SNA_PT_MATERIAL_BY_Nviewlayer_85AF2(Panel):
             width = context.region.width#- 45- 20 #N面板的宽度
             ui_scale = bpy.context.preferences.view.ui_scale
             fontCount = math.floor(width / (fontsize*ui_scale* 1.5)) # 调整为中文字符宽度 这样中文才会自动换行##fontCount = floor(width / (fontsize))#+ 10#fontsize = 12
-            textTowrap = rpt_("当前页面里有多个Viewlayer Group属性的节点树,它们都会被自动修改,把不用自动刷新的节点树属性改为默认." )
+            textTowrap = iface_("当前页面里有多个Viewlayer Group属性的节点树,它们都会被自动修改,把不用自动刷新的节点树属性改为默认." )
             wrapp = textwrap.TextWrapper(width=fontCount) #50 = maximum length       
             wList = wrapp.wrap(text=textTowrap)#对textTowrap中的单独段落自动换行以使每行长度最多为 width 个字符
 
@@ -1702,10 +1717,94 @@ def set_ac_scene_list_index(self, value):
         print('-----', err, end=' | ')
         print('set_ac_scene_list_index Error on line {}'.format(sys.exc_info()[-1].tb_lineno))
 
+
 def rna_idprop_quote_path(prop):
     return "[\"%s\"]" % bpy.utils.escape_identifier(prop)
 
 class CPBR_UL_viewlayer_list(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        wm = context.window_manager
+        scene = data  # data 是当前场景对象
+        renderscenen=scene.CPBR_Main_Props.cp_render_scene
+        # 获取当前场景的活动视图层 没有这个属性 active_view_layer = scene.view_layer
+
+        col = layout.column(heading='', align=True)
+
+        row=col.row(heading='', align=True)
+        if renderscenen:
+            row.prop(item, "use", text="",icon='RENDER_STILL')#是否渲染该图层
+
+        # row.prop(item, "name", text="", emboss=False, icon='RENDERLAYERS')
+        r=row.row(heading='', align=True)
+        if item == context.window.view_layer:
+            r.alert = True
+        op=r.operator("cpbr.switch_scene_view_layer", text=item.name, icon='RENDERLAYERS')
+        op.scenename = scene.name
+        op.viewlayername = item.name
+
+        show_preview=wm.WM_CPBR_Main_Props.show_all_preview and scene.CPBR_Main_Props.show_scene_preview
+        if show_preview:
+            op=row.operator("cpbr.render_viewport", icon='RESTRICT_RENDER_OFF', text='')
+            op.scenename = scene.name
+            op.layername = item.name
+
+        if renderscenen and item.use:
+            try:
+                row = col.row(heading='', align=True)
+                if not scene.CPBR_Main_Props.cp_use_scene_camera:
+                    row_7C74D = row.row(heading='', align=True)
+                    attr_6CE1A = '["' + str('CPBatchRender Viewlayers render_camera' + '"]') 
+                    if hasattr(item, attr_6CE1A):
+                        row_7C74D.prop(item, attr_6CE1A, text='', icon='VIEW_CAMERA', emboss=True)
+                        # #参考官方的rna_prop_ui.py显示方法
+                        # row_7C74D.template_ID(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_camera"), text="",filter='AVAILABLE',)
+
+                if not scene.CPBR_Main_Props.cp_use_scene_world:
+                    row_7C74D = row.row(heading='', align=True)
+                    attr_6CE22 = '["' + str('CPBatchRender Viewlayers render_world' + '"]')
+                    if hasattr(item, attr_6CE22):
+                        row_7C74D.prop(item, attr_6CE22, text='', icon='WORLD', emboss=True)
+                        #row_7C74D.template_ID(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_world"), text="",filter='AVAILABLE',)
+                    
+                if not scene.CPBR_Main_Props.cp_use_scene_resolution:
+                    row_1FD8B = col.row(heading='', align=True)
+                    attr_6CE33 = '["' + str('CPBatchRender Viewlayers render_resolution' + '"]') 
+                    if hasattr(item, attr_6CE33):
+                        row_1FD8B.prop(item, attr_6CE33, text='', icon_value=0, emboss=True)
+                        #row_1FD8B.prop(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_resolution"), text="")
+            except:
+                pass
+
+        ## 缩略图
+        if show_preview:
+            tex="Screenshot preview"
+            image = None
+            if "CPBatchRender Viewlayers render_preview" in item and item["CPBatchRender Viewlayers render_preview"]:
+                image = bpy.data.images.get(item["CPBatchRender Viewlayers render_preview"].name)
+            if image :
+                if image.preview is not None:
+                    col.template_icon(icon_value=image.preview.icon_id, scale=wm.WM_CPBR_Main_Props.scale_preview)
+
+            else:
+                tex="Screenshot preview ⇑ "
+                prerow=col.row()
+                prerow.alert = True
+
+                r0=prerow.row(align=True)
+                r0.alignment = 'RIGHT'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
+                r0.label(text=tex)
+            
+                # op=prerow.operator("cpbr.render_viewport", icon='RESTRICT_RENDER_OFF', text=tex)
+                # op.scenename = scene.name
+                # op.layername = item.name
+
+        if bpy.app.version >= (4, 2):
+            col.separator(type="LINE") 
+        else:
+            # col.separator()
+            col.label(text="." * 300)
+        
+class CPBR_UL_scenes_list(UIList):
     # def draw_item(self, context, layout, data, item, icon, active_data, active_propname):
         # if isinstance(item, bpy.types.Scene):
         #     prefs = get_prefs()   
@@ -1778,9 +1877,9 @@ class CPBR_UL_viewlayer_list(UIList):
         #                     # s1.separator(factor=0.0)
         #                     # box_e = s1.box()
         #                     # #prow=box_e.row(align=True)
-        #                     col.template_icon(icon_value=image.preview.icon_id, scale=context.scene.CPBR_Main_Props.scale_preview)
+        #                     col.template_icon(icon_value=image.preview.icon_id, scale=wm.WM_CPBR_Main_Props.scale_preview)
         #             else:
-        #                 col.template_icon(icon_value=53, scale=context.scene.CPBR_Main_Props.scale_preview)
+        #                 col.template_icon(icon_value=53, scale=wm.WM_CPBR_Main_Props.scale_preview)
 
 
         #         s1=col.split(factor=0.05, align=True)
@@ -1834,10 +1933,199 @@ class CPBR_UL_viewlayer_list(UIList):
 
         #             col.separator(factor=1.0)
 
+    # 成功，但不是采用子列表
+    # def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # if isinstance(item, bpy.types.Scene):
+        #     #prefs = get_prefs()   
+        #     renderscenen=item.CPBR_Main_Props.cp_render_scene
+
+        #     col_49E9F = layout.column(heading='', align=True)
+            
+        #     row_A41D3 = col_49E9F.row(heading='', align=True)
+
+        #     #row_A41D3.label(text="", icon_value=0)
+
+        #     row_A41D3.alert = False
+        #     row_A41D3.enabled = True
+        #     row_A41D3.active = True
+        #     row_A41D3.use_property_split = False
+        #     row_A41D3.use_property_decorate = False
+        #     row_A41D3.scale_x = 1.0
+        #     row_A41D3.scale_y = 1.0
+        #     row_A41D3.alignment = 'EXPAND'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
+
+        #     try:
+        #         sub=row_A41D3.row(align=True)
+        #         sub.scale_x = 0.35 if item.CPBR_Main_Props.show_all_preview else 0.3
+        #         # 使用当前项的索引显示序号
+        #         sub.label(text="-%d" % (index + 1))
+        #     except ValueError:
+        #         pass
+
+        #     sub2=row_A41D3.row(align=True)
+        #     sub.scale_y = 1.0
+        #     sub2.prop(item, "name", text="", emboss=False, icon='SCENE_DATA')#场景名# emboss=False让文本不是编辑状态而是要双击才编辑
+
+        #     sub2.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
+        #     sub2.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
+        #     sub2.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
+        #     sub2.separator(factor=1.0)
+
+        #     if item.CPBR_Main_Props.show_all_preview:
+        #         sub2.prop(item.CPBR_Main_Props, "show_scene_preview",icon_value=755, text="")
+
+        #     row_kong = col_49E9F.row(heading='', align=True)
+        #     row_kong.scale_y = 0.2
+        #     row_kong.label(text="", icon_value=0)
+
+            
+
+        #     grid_C74E9 = col_49E9F.grid_flow(columns=2, row_major=True, even_columns=False, even_rows=False, align=True)
+            
+        #     grid_C74E9.prop(item.CPBR_Main_Props, "cp_render_scene", text="",icon_value=192)#是否渲染该场景
+
+        #     box_86729 = grid_C74E9.box()
+            
+        #     col_01C15 = box_86729.column(heading='', align=True)
+        #     if renderscenen:
+        #         row_4AA07 = col_01C15.row(heading='', align=True)
+
+        #         #场景相机
+        #         # if item.CPBR_Main_Props.cp_use_scene_camera:
+        #         r0=row_4AA07.row(align=True)
+        #         #r0.alert = True
+        #         r0.enabled = item.CPBR_Main_Props.cp_use_scene_camera
+        #         r0.active = item.CPBR_Main_Props.cp_use_scene_camera            
+        #         #r0.prop(item, "camera", text="")
+        #         r0.prop(item, "camera", text='', icon_value=772, emboss=True)
+
+        #         # row_4AA07.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
+
+        #         #场景世界环境
+        #         # row_DBF9D = col_01C15.row(heading='', align=True)
+        #         #if item.CPBR_Main_Props.cp_use_scene_world:
+        #         # r_world=row_DBF9D.row(align=True)
+        #         r1=row_4AA07.row(align=True)#r_world.row(align=True)
+        #         #r0.alert = True
+        #         r1.enabled = item.CPBR_Main_Props.cp_use_scene_world
+        #         r1.active = item.CPBR_Main_Props.cp_use_scene_world  
+        #         #r1.template_ID(item, "world")
+        #         r1.prop(item, 'world', text='', icon_value=82, emboss=True)
+
+        #         # row_DBF9D.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
+
+        #         #if item.CPBR_Main_Props.cp_use_scene_resolution:
+        #         #场景分辨率
+        #         row_53579 = col_01C15.row(heading='', align=True)
+
+        #         r3=row_53579.row(align=True)
+        #         r3.enabled = item.CPBR_Main_Props.cp_use_scene_resolution
+        #         r3.active = item.CPBR_Main_Props.cp_use_scene_resolution   
+        #         r3.prop(item.render, "resolution_x", text="Resolution X")
+        #         r3.prop(item.render, "resolution_y", text="Y")
+                
+        #         # row_53579.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
+
+        #         col_01C15.separator(factor=1.0)
+
+        #     scenes = bpy.data.scenes
+        #     view_layers = scenes[item.name].view_layers
+        #     is_active = item.name == bpy.context.window.scene.name
+        #     for layer in view_layers:
+
+        #         box_78EBA = col_01C15.box()
+                
+        #         col_EA64C = box_78EBA.column(heading='', align=True)
+                
+        #         if item.CPBR_Main_Props.show_all_preview and item.CPBR_Main_Props.show_scene_preview:
+        #             ##C:\Users\CP\AppData\Roaming\Blender Foundation\Blender\Addons_Big addons\addons\gscatter\common  ops.py 53
+        #             # col.template_icon(icon_value=previews.get(icons.get_icon_path("tutorial_cover")).icon_id, scale=18)
+        #             tex=""
+        #             image = None
+        #             if "CPBatchRender Viewlayers render_preview" in layer and layer["CPBatchRender Viewlayers render_preview"]:
+        #                 image = bpy.data.images.get(layer["CPBatchRender Viewlayers render_preview"].name)
+        #             if image is not None:
+        #                 if image.preview is not None:
+        #                     # s1=col.split(factor=0.05, align=True)
+        #                     # s1.scale_y = 1.5
+        #                     # s1.separator(factor=0.0)
+        #                     # box_e = s1.box()
+        #                     # #prow=box_e.row(align=True)
+        #                     col_EA64C.template_icon(icon_value=image.preview.icon_id, scale=context.scene.CPBR_Main_Props.scale_preview)
+        #             else:
+        #                 tex="Screenshot preview"
+        #             #     col_EA64C.alignment = 'RIGHT'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
+        #             #     col_EA64C.label(text="Manually screenshot thumbnails ↴  ", icon_value=0)
+        #             #     # row_render = col_EA64C.row(heading='', align=True)
+        #             #     # row_render.scale_y = 1.5
+        #             #     # row_render.alignment = 'CENTER'
+        #             #     # op=row_render.operator("cpbr.render_viewport", icon_value=83, text="")
+        #             #     # op.scenename = item.name
+        #             #     # op.layername = layer.name
+
+
+        #         split_C95C3 = col_EA64C.split(factor=0.1 if renderscenen else 1, align=True)
+                
+        #         split_C95C3.scale_y = 1.5
+        #         if renderscenen:
+        #             split_C95C3.prop(layer, "use", text="",icon_value=192)#是否渲染该图层
+ 
+        #         row_823B1 = split_C95C3.row(heading='', align=True)
+        #         if layer == context.window.view_layer and is_active:
+        #             row_823B1.alert = True
+                
+        #         op=row_823B1.operator("cpbr.switch_scene_view_layer", text=layer.name)#icon_value=187, 
+        #         op.scenename = item.name
+        #         op.viewlayername = layer.name
+
+        #         if item.CPBR_Main_Props.show_all_preview and item.CPBR_Main_Props.show_scene_preview:
+        #             row_030C8 = row_823B1.row(heading='', align=True)
+        #             row_030C8.alert = False
+                    
+        #             op=row_030C8.operator("cpbr.render_viewport", icon_value=83, text=tex)
+        #             op.scenename = item.name
+        #             op.layername = layer.name
+
+        #         if renderscenen:
+        #             try:   
+        #                 row_7C74D = col_EA64C.row(heading='', align=True)
+        #                 row_7C74D.scale_y = 1.0
+
+        #                 if not item.CPBR_Main_Props.cp_use_scene_camera:
+        #                     attr_6CE1A = '["' + str('CPBatchRender Viewlayers render_camera' + '"]') 
+        #                     row_7C74D.prop(layer, attr_6CE1A, text='', icon_value=772, emboss=True)
+        #                     # #参考官方的rna_prop_ui.py显示方法
+        #                     # row_7C74D.template_ID(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_camera"), text="",filter='AVAILABLE',)
+
+        #                 if not item.CPBR_Main_Props.cp_use_scene_world:
+        #                     attr_6CE22 = '["' + str('CPBatchRender Viewlayers render_world' + '"]') 
+        #                     row_7C74D.prop(layer, attr_6CE22, text='', icon_value=82, emboss=True)
+        #                     #row_7C74D.template_ID(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_world"), text="",filter='AVAILABLE',)
+                        
+        #                 if not item.CPBR_Main_Props.cp_use_scene_resolution:
+        #                     row_1FD8B = col_EA64C.row(heading='', align=True)
+        #                     #row_1FD8B.label(text="", icon_value=597)
+        #                     attr_6CE33 = '["' + str('CPBatchRender Viewlayers render_resolution' + '"]') 
+        #                     row_1FD8B.prop(layer, attr_6CE33, text='', icon_value=0, emboss=True)
+        #                     #row_1FD8B.prop(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_resolution"), text="")
+        #             except:
+        #                 pass
+
+        #         col_01C15.separator(factor=1.0)
+
+        #     #col_49E9F.separator(factor=2.0)
+        #     if bpy.app.version >= (4, 2):
+        #         col_49E9F.separator(type="LINE") 
+                
+        #     else:
+        #         col_49E9F.separator()
+
+    # 采用子列表
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if isinstance(item, bpy.types.Scene):
             #prefs = get_prefs()   
             renderscenen=item.CPBR_Main_Props.cp_render_scene
+            wm = context.window_manager
 
             col_49E9F = layout.column(heading='', align=True)
             
@@ -1851,177 +2139,94 @@ class CPBR_UL_viewlayer_list(UIList):
             row_A41D3.use_property_split = False
             row_A41D3.use_property_decorate = False
             row_A41D3.scale_x = 1.0
-            row_A41D3.scale_y = 1.0
+            row_A41D3.scale_y = 1.3
             row_A41D3.alignment = 'EXPAND'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
 
-            try:
-                sub=row_A41D3.row(align=True)
-                sub.scale_x = 0.35 if item.CPBR_Main_Props.show_all_preview else 0.3
-                # 使用当前项的索引显示序号
-                sub.label(text="-%d" % (index + 1))
-            except ValueError:
-                pass
+            row_A41D3.prop(item.CPBR_Main_Props, "cp_render_scene", text="",icon='RENDER_STILL')#是否渲染该场景
+
+            row_A41D3.prop(item.CPBR_Main_Props, "zhedie", text="",icon='DOWNARROW_HLT' if item.CPBR_Main_Props.zhedie else 'RIGHTARROW', emboss=False)#折叠
+
+            # try:
+            #     sub=row_A41D3.row(align=True)
+            #     sub.scale_x = 0.35 if wm.WM_CPBR_Main_Props.show_all_preview else 0.3
+            #     # 使用当前项的索引显示序号
+            #     sub.label(text="-%d" % (index + 1))
+            # except ValueError:
+            #     pass
 
             sub2=row_A41D3.row(align=True)
-            sub.scale_y = 1.0
+            # sub.scale_y = 1.0
             sub2.prop(item, "name", text="", emboss=False, icon='SCENE_DATA')#场景名# emboss=False让文本不是编辑状态而是要双击才编辑
 
-            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
-            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
-            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
+            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon='VIEW_CAMERA')
+            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon='WORLD_DATA')
+            sub2.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon='ORIENTATION_VIEW')
             sub2.separator(factor=1.0)
 
-            if item.CPBR_Main_Props.show_all_preview:
-                sub2.prop(item.CPBR_Main_Props, "show_scene_preview",icon_value=755, text="")
+            if wm.WM_CPBR_Main_Props.show_all_preview:
+                sub2.prop(item.CPBR_Main_Props, "show_scene_preview",icon='SEQ_PREVIEW', text="")
 
-            row_kong = col_49E9F.row(heading='', align=True)
-            row_kong.scale_y = 0.2
-            row_kong.label(text="", icon_value=0)
+            if not item.CPBR_Main_Props.zhedie:
+                if bpy.app.version >= (4, 2):
+                    col_49E9F.separator(type="LINE") 
+                else:
+                    col_49E9F.label(text="." * 300)
+                return
 
+            # if renderscenen:
+            r=col_49E9F.row(align=True)
+            r0=r.row(align=True)
+            r0.alignment = 'LEFT'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
+            r0.label(icon_value=0)
+            s = r.grid_flow(columns=0, row_major=True, even_columns=False, even_rows=False, align=True)
+            # r=col_49E9F.row(align=True)
+            #场景相机
+            r0=s.row(align=True)
+            r0.enabled = item.CPBR_Main_Props.cp_use_scene_camera
+            r0.active = item.CPBR_Main_Props.cp_use_scene_camera            
+            r0.prop(item, "camera", text='', icon='VIEW_CAMERA', emboss=True)
+
+            #场景世界环境
+            r1=s.row(align=True)#r_world.row(align=True)
+            #r0.alert = True
+            r1.enabled = item.CPBR_Main_Props.cp_use_scene_world
+            r1.active = item.CPBR_Main_Props.cp_use_scene_world  
+            r1.prop(item, 'world', text='', icon='WORLD_DATA', emboss=True)
+
+            #场景分辨率
+            r3=s.row(align=True)
+            r3.enabled = item.CPBR_Main_Props.cp_use_scene_resolution
+            r3.active = item.CPBR_Main_Props.cp_use_scene_resolution   
+            r3.prop(item.render, "resolution_x", text="Resolution X")
+            r3.prop(item.render, "resolution_y", text="Y")
             
+            # if not item.CPBR_Main_Props.zhedie:
+            #     if bpy.app.version >= (4, 2):
+            #         col_49E9F.separator(type="LINE") 
+            #     else:
+            #         col_49E9F.label(text="." * 300)
+            #     return
+           
+            col_49E9F.separator(factor=1.0)
 
-            grid_C74E9 = col_49E9F.grid_flow(columns=2, row_major=True, even_columns=False, even_rows=False, align=True)
-            
-            grid_C74E9.prop(item.CPBR_Main_Props, "cp_render_scene", text="",icon_value=192)#是否渲染该场景
+            # s = col_49E9F.grid_flow(columns=2, row_major=True, even_columns=False, even_rows=False, align=True)
 
-            box_86729 = grid_C74E9.box()
-            
-            col_01C15 = box_86729.column(heading='', align=True)
-            if renderscenen:
-                row_4AA07 = col_01C15.row(heading='', align=True)
+            # s.prop(item.CPBR_Main_Props, "cp_render_scene", text="",icon='RENDER_STILL')#是否渲染该场景
 
-                #场景相机
-                # if item.CPBR_Main_Props.cp_use_scene_camera:
-                r0=row_4AA07.row(align=True)
-                #r0.alert = True
-                r0.enabled = item.CPBR_Main_Props.cp_use_scene_camera
-                r0.active = item.CPBR_Main_Props.cp_use_scene_camera            
-                #r0.prop(item, "camera", text="")
-                r0.prop(item, "camera", text='', icon_value=772, emboss=True)
+            r=col_49E9F.row(align=True)
+            r0=r.row(align=True)
+            r0.alignment = 'LEFT'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
+            r0.label(icon_value=0)
+            r.template_list("CPBR_UL_viewlayer_list", "", item, "view_layers", item.CPBR_Main_Props, "cp_active_viewlayer_index",rows=len(item.view_layers))
 
-                # row_4AA07.prop(item.CPBR_Main_Props, "cp_use_scene_camera", text="", icon_value=772)
-
-                #场景世界环境
-                # row_DBF9D = col_01C15.row(heading='', align=True)
-                #if item.CPBR_Main_Props.cp_use_scene_world:
-                # r_world=row_DBF9D.row(align=True)
-                r1=row_4AA07.row(align=True)#r_world.row(align=True)
-                #r0.alert = True
-                r1.enabled = item.CPBR_Main_Props.cp_use_scene_world
-                r1.active = item.CPBR_Main_Props.cp_use_scene_world  
-                #r1.template_ID(item, "world")
-                r1.prop(item, 'world', text='', icon_value=82, emboss=True)
-
-                # row_DBF9D.prop(item.CPBR_Main_Props, "cp_use_scene_world", text="", icon_value=158)
-
-                #if item.CPBR_Main_Props.cp_use_scene_resolution:
-                #场景分辨率
-                row_53579 = col_01C15.row(heading='', align=True)
-
-                r3=row_53579.row(align=True)
-                r3.enabled = item.CPBR_Main_Props.cp_use_scene_resolution
-                r3.active = item.CPBR_Main_Props.cp_use_scene_resolution   
-                r3.prop(item.render, "resolution_x", text="Resolution X")
-                r3.prop(item.render, "resolution_y", text="Y")
-                
-                # row_53579.prop(item.CPBR_Main_Props, "cp_use_scene_resolution", text="", icon_value=597)
-
-                col_01C15.separator(factor=1.0)
-
-            scenes = bpy.data.scenes
-            view_layers = scenes[item.name].view_layers
-            is_active = item.name == bpy.context.window.scene.name
-            for layer in view_layers:
-
-                box_78EBA = col_01C15.box()
-                
-                col_EA64C = box_78EBA.column(heading='', align=True)
-                
-                if item.CPBR_Main_Props.show_all_preview and item.CPBR_Main_Props.show_scene_preview:
-                    ##C:\Users\CP\AppData\Roaming\Blender Foundation\Blender\Addons_Big addons\addons\gscatter\common  ops.py 53
-                    # col.template_icon(icon_value=previews.get(icons.get_icon_path("tutorial_cover")).icon_id, scale=18)
-                    tex=""
-                    image = None
-                    if "CPBatchRender Viewlayers render_preview" in layer and layer["CPBatchRender Viewlayers render_preview"]:
-                        image = bpy.data.images.get(layer["CPBatchRender Viewlayers render_preview"].name)
-                    if image is not None:
-                        if image.preview is not None:
-                            # s1=col.split(factor=0.05, align=True)
-                            # s1.scale_y = 1.5
-                            # s1.separator(factor=0.0)
-                            # box_e = s1.box()
-                            # #prow=box_e.row(align=True)
-                            col_EA64C.template_icon(icon_value=image.preview.icon_id, scale=context.scene.CPBR_Main_Props.scale_preview)
-                    else:
-                        tex="Screenshot preview"
-                    #     col_EA64C.alignment = 'RIGHT'#[‘EXPAND’, ‘LEFT’, ‘CENTER’, ‘RIGHT’]
-                    #     col_EA64C.label(text="Manually screenshot thumbnails ↴  ", icon_value=0)
-                    #     # row_render = col_EA64C.row(heading='', align=True)
-                    #     # row_render.scale_y = 1.5
-                    #     # row_render.alignment = 'CENTER'
-                    #     # op=row_render.operator("cpbr.render_viewport", icon_value=83, text="")
-                    #     # op.scenename = item.name
-                    #     # op.layername = layer.name
-
-
-                split_C95C3 = col_EA64C.split(factor=0.1 if renderscenen else 1, align=True)
-                
-                split_C95C3.scale_y = 1.5
-                if renderscenen:
-                    split_C95C3.prop(layer, "use", text="",icon_value=192)#是否渲染该图层
- 
-                row_823B1 = split_C95C3.row(heading='', align=True)
-                if layer == context.window.view_layer and is_active:
-                    row_823B1.alert = True
-                
-                op=row_823B1.operator("cpbr.switch_scene_view_layer", text=layer.name)#icon_value=187, 
-                op.scenename = item.name
-                op.viewlayername = layer.name
-
-                if item.CPBR_Main_Props.show_all_preview and item.CPBR_Main_Props.show_scene_preview:
-                    row_030C8 = row_823B1.row(heading='', align=True)
-                    row_030C8.alert = False
-                    
-                    op=row_030C8.operator("cpbr.render_viewport", icon_value=83, text=tex)
-                    op.scenename = item.name
-                    op.layername = layer.name
-
-                if renderscenen:
-                    try:   
-                        row_7C74D = col_EA64C.row(heading='', align=True)
-                        row_7C74D.scale_y = 1.0
-
-                        if not item.CPBR_Main_Props.cp_use_scene_camera:
-                            attr_6CE1A = '["' + str('CPBatchRender Viewlayers render_camera' + '"]') 
-                            row_7C74D.prop(layer, attr_6CE1A, text='', icon_value=772, emboss=True)
-                            # #参考官方的rna_prop_ui.py显示方法
-                            # row_7C74D.template_ID(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_camera"), text="",filter='AVAILABLE',)
-
-                        if not item.CPBR_Main_Props.cp_use_scene_world:
-                            attr_6CE22 = '["' + str('CPBatchRender Viewlayers render_world' + '"]') 
-                            row_7C74D.prop(layer, attr_6CE22, text='', icon_value=82, emboss=True)
-                            #row_7C74D.template_ID(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_world"), text="",filter='AVAILABLE',)
-                        
-                        if not item.CPBR_Main_Props.cp_use_scene_resolution:
-                            row_1FD8B = col_EA64C.row(heading='', align=True)
-                            #row_1FD8B.label(text="", icon_value=597)
-                            attr_6CE33 = '["' + str('CPBatchRender Viewlayers render_resolution' + '"]') 
-                            row_1FD8B.prop(layer, attr_6CE33, text='', icon_value=0, emboss=True)
-                            #row_1FD8B.prop(layer, rna_idprop_quote_path("CPBatchRender Viewlayers render_resolution"), text="")
-                    except:
-                        pass
-
-                col_01C15.separator(factor=1.0)
-
-            #col_49E9F.separator(factor=2.0)
             if bpy.app.version >= (4, 2):
                 col_49E9F.separator(type="LINE") 
-                
             else:
                 col_49E9F.separator()
 
+            return
+
 class CPBR_PT_UIListPanel(Panel):
-    """Creates a Panel in the Object properties window"""
     bl_label = "Batch Render"#Viewlayer(Scenes) List
     bl_idname = "CPBR_PT_UIListPanel"
     bl_space_type = 'VIEW_3D'
@@ -2033,31 +2238,34 @@ class CPBR_PT_UIListPanel(Panel):
     def draw(self, context):
         #prefs = get_prefs()
         layout = self.layout
-
+        wm = context.window_manager
         col = layout.column(heading="", align=True)
 
         r = col.row(heading='Viewlayers List:', align=True)
         #col.label(text='Viewlayer(Scenes) List')
-        if context.scene.CPBR_Main_Props.show_all_preview:
-            r.prop(context.scene.CPBR_Main_Props, "scale_preview", text="Scale")
-        r.prop(context.scene.CPBR_Main_Props, "show_all_preview",icon_value=755, text="")
+        if wm.WM_CPBR_Main_Props.show_all_preview:
+            r.prop(wm.WM_CPBR_Main_Props, "scale_preview", text="Scale")
+        r.prop(wm.WM_CPBR_Main_Props, "show_all_preview",icon='SEQ_PREVIEW', text="")
 
-       
-        col.template_list("CPBR_UL_viewlayer_list", "", bpy.data, "scenes", context.scene.CPBR_Main_Props, "cp_change_active_index")
+        r.separator(factor=1.0)
+
+        # col.template_list("CPBR_UL_scenes_list", "", bpy.data, "scenes", context.scene.CPBR_Main_Props, "cp_change_active_scene_index")
+        col.template_list("CPBR_UL_scenes_list", "", bpy.data, "scenes", wm.WM_CPBR_Main_Props, "cp_change_active_scene_index",rows=len(bpy.data.scenes))
+
 
         rowpath = layout.row(heading='', align=True)
         rp = rowpath.row(heading='', align=True)
-        use_blendpath=context.scene.CPBR_Main_Props.use_auto_blenderpath
+        use_blendpath=wm.WM_CPBR_Main_Props.use_auto_blenderpath
         # rp.active = use_blendpath  
-        rp.prop(context.scene.CPBR_Main_Props, "use_auto_blenderpath",text="Save to BL file`s directory")
+        rp.prop(wm.WM_CPBR_Main_Props, "use_auto_blenderpath",text="Save to BL file`s directory")
 
         blendPath = str(bpy.path.abspath('//'))  #返回相对于当前混合文件的绝对路径
         blendPath += os.path.splitext(bpy.path.basename(bpy.context.blend_data.filepath))[0]#去除.blend后缀的名字
         ro = rowpath.row(heading='', align=True)
-        ro.prop(context.scene.CPBR_Main_Props, "auto_saverendertext")
-        ro.operator("wm.path_open", text="Open Save Folder",icon = 'FILE_FOLDER').filepath = blendPath if use_blendpath else context.scene.CPBR_Main_Props.directory
+        ro.prop(wm.WM_CPBR_Main_Props, "auto_saverendertext")
+        ro.operator("wm.path_open", text="",icon = 'FILE_FOLDER').filepath = blendPath if use_blendpath else wm.WM_CPBR_Main_Props.directory
         if not use_blendpath:
-            layout.prop(context.scene.CPBR_Main_Props, "directory", text="")
+            layout.prop(wm.WM_CPBR_Main_Props, "directory", text="")
 
 
         row = layout.row(heading='', align=True)
@@ -2084,9 +2292,9 @@ class CPBR_PT_UIListPanel(Panel):
             # text=renderscenename
             # layout.label(text=text, icon_value=0)
         #layout.label(text="视图层设置独立相机时记得选择对应场景里的相机!", icon_value=1)
-        layout.label(text="Batch rendering is saved with the compositor\'s output node!", icon_value=1)
-        layout.label(text="Only need one viewlayer node and one output node in compositor!", icon_value=1)
-        layout.label(text="Other plugins that automatically set the path of the output node will affect the save path!", icon_value=1)
+        layout.label(text=iface_("Batch rendering is saved with the compositor\'s output node!"), icon='QUESTION')
+        layout.label(text=iface_("Only need one viewlayer node and one output node in compositor!"), icon='QUESTION')
+        layout.label(text=iface_("Other plugins that automatically set the path of the output node will affect the save path!"), icon='QUESTION')
 
         if bpy.app.version >= (4, 2):
             layout.separator(type="LINE")  
@@ -2118,7 +2326,7 @@ class CPBR_OT_SwitchSceneViewLayer(Operator):
                 #https://blender.stackexchange.com/questions/131881/change-active-view-layer-with-python
                 context.window.view_layer = layer
                 
-                update_viewlayercamera()#检查视图层相机属性的相机是否是场景里的相机
+                update_viewlayer_props()
 
                 ##根据视图层相机 切换场景相机
                 try:
@@ -2144,6 +2352,14 @@ class CPBR_OT_SwitchSceneViewLayer(Operator):
 
                 break
 
+        # 修改列表里活动视图层
+        scenes = bpy.data.scenes
+        for scene in scenes:
+            if scene.name == self.scenename:
+                for i,layer in enumerate(scene.view_layers):
+                    if layer.name == self.viewlayername:
+                        scene.CPBR_Main_Props.cp_active_viewlayer_index=i
+                        break
         return {'FINISHED'}
 
 renderscenename=""
@@ -2165,7 +2381,6 @@ def update_ui():
     return None  # Stop the timer
 
 bugmes=''
-
 
 class CPBR_OT_BatchRender(Operator):
     bl_idname = "cpbr.batch_render"
@@ -2466,10 +2681,10 @@ class CPBR_OT_BatchRender(Operator):
         #                 if node.type=="R_LAYERS":
         #                     node.layer=entry['layer'].name
                         
-        #         if context.scene.CPBR_Main_Props.use_auto_blenderpath:#保存到blend文件同目录下
+        #         if wm.WM_CPBR_Main_Props.use_auto_blenderpath:#保存到blend文件同目录下
         #             path = Path(bpy.path.abspath('//'))  #保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path,//就代表blender文件路径
         #         else:#自定义目录
-        #             path = Path(context.scene.CPBR_Main_Props.directory)
+        #             path = Path(wm.WM_CPBR_Main_Props.directory)
         #         # 工程路径和blender文件名
         #         blendPath = bpy.context.blend_data.filepath
         #         blendName = bpy.path.basename(blendPath)
@@ -2495,7 +2710,7 @@ class CPBR_OT_BatchRender(Operator):
 
         #         #bpy.ops.render.render(use_viewport=True, write_still=True)#write_still是否保存属性保存面板里设置的保存
         #         bpy.ops.render.render(use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
-        #         if bpy.context.scene.CPBR_Main_Props.auto_saverendertext:
+        #         if wm.WM_CPBR_Main_Props.auto_saverendertext:
         #             renderfinishtime=datetime.now()
         #             auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
 
@@ -2743,7 +2958,6 @@ class CPBR_OT_BatchRender(Operator):
         layout.separator()
         layout.separator()
 
-
     def execute(self, context):
         global renderscenename, bugmes
         bugmes = ''
@@ -2776,7 +2990,10 @@ class CPBR_OT_BatchRender(Operator):
                 if step == 0:
                     i = tot / 10  # 从10%开始显示
                 wm.progress_update(i)
-                r.render_slots.active_index = step  # 每个场景切换一个渲染槽就行了
+                try:
+                    r.render_slots.active_index = step # 每个场景切换一个渲染槽就行了
+                except:
+                    pass
 
                 # 设置场景相机
                 bpy.data.scenes[entry['scene'].name].camera = entry['camera']
@@ -2787,7 +3004,7 @@ class CPBR_OT_BatchRender(Operator):
                 bpy.data.scenes[entry['scene'].name].world = entry['world']
 
                 # 可以在这里添加渲染逻辑或其他操作
-                r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
+                # r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
                 bpy.context.view_layer.update()
 
                 ## 如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
@@ -2795,12 +3012,13 @@ class CPBR_OT_BatchRender(Operator):
                 if bpy.data.scenes[entry['scene'].name].use_nodes:
                     for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
                         if node.type == "R_LAYERS":
+                            node.scene = bpy.data.scenes[entry['scene'].name]
                             node.layer = entry['layer'].name
                         
-                if context.scene.CPBR_Main_Props.use_auto_blenderpath:  # 保存到blend文件同目录下
+                if wm.WM_CPBR_Main_Props.use_auto_blenderpath:  # 保存到blend文件同目录下
                     path = Path(bpy.path.abspath('//'))  # 保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path, //就代表blender文件路径
                 else:  # 自定义目录
-                    path = Path(context.scene.CPBR_Main_Props.directory)
+                    path = Path(wm.WM_CPBR_Main_Props.directory)
                 # 工程路径和blender文件名
                 blendPath = bpy.context.blend_data.filepath
                 blendName = bpy.path.basename(blendPath)
@@ -2825,8 +3043,14 @@ class CPBR_OT_BatchRender(Operator):
                             #node.base_path = str(base_path / node.name)
 
                 #bpy.ops.render.render(use_viewport=True, write_still=True)#write_still是否保存属性保存面板里设置的保存
+                # print(entry['scene'].name)
+                # for node in context.scene.node_tree.nodes:
+                #     if node.type == "R_LAYERS":
+                #         node.scene = bpy.data.scenes[entry['scene'].name]
+                #         node.layer = entry['layer'].name
+
                 bpy.ops.render.render(use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
-                if bpy.context.scene.CPBR_Main_Props.auto_saverendertext:
+                if wm.WM_CPBR_Main_Props.auto_saverendertext:
                     renderfinishtime=datetime.now()
                     auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
 
@@ -3032,6 +3256,8 @@ class CPBR_OT_RenderViewport(Operator):
         # y=int(layer.ResolutionY*(layer.ResolutionPercentage/100))
         # cam = bpy.data.objects[layer.name]
 
+        #这个是blender自带的命令是权重模式下视图菜单下的 #拍摄活动视区的快照 bpy.ops.render.opengl(animation=False, render_keyed_only=False, sequencer=False, write_still=False, view_context=True)
+
         offscreen = gpu.types.GPUOffScreen( x, y )
         vm = cam.matrix_world.inverted( )
         pm = cam.calc_matrix_camera( context.evaluated_depsgraph_get( ), x = x, y = y )
@@ -3119,11 +3345,71 @@ class CPBR_OT_RenderViewport(Operator):
 
         ui = layer.id_properties_ui(prop_key)
         # 更新属性
-        ui.update(description="Viewlayers preview!")
-        ui.update(subtype='NONE')
-        ui.update(id_type='TEXTURE')
+        if bpy.app.version >= (4, 2):
+            ui.update(description="Viewlayers preview!")
+            ui.update(subtype='NONE')
+            ui.update(id_type='TEXTURE')
+        else:
+            ui.update(id_type='TEXTURE')
                         
+def update_viewlayer_props():#检查所有场景每个视图层下是否有3个属性不用传递self
+    scenes = bpy.data.scenes
+    for scene in scenes:
+        for vlayer in scene.view_layers:
+            # 检查属性是否存在，不存在则创建
+            if "CPBatchRender Viewlayers render_camera" not in vlayer:
+                #vlayer["CPBatchRender Viewlayers render_camera"] = scene.camera
 
+                vlayer["CPBatchRender Viewlayers render_camera"] = None
+                if scene.camera:
+                    vlayer["CPBatchRender Viewlayers render_camera"] = scene.camera
+
+            vlayer.update()
+            
+            ui = vlayer.id_properties_ui("CPBatchRender Viewlayers render_camera")
+            # # 更新属性
+            if bpy.app.version >= (4, 2):
+                ui.update(description="Viewlayers render_camera!")
+                ui.update(subtype='NONE')#bpy.data.window_managers["WinMan"]. = 'DATA_BLOCK'bpy.data.window_managers["WinMan"]. = 'CAMERA'
+                ui.update(id_type='OBJECT')#'CAMERA'
+            else:
+                ui.update(id_type='OBJECT') # 只有这个不会导致闪退，也就这个属性最重要
+           
+            # 检查属性是否存在，不存在则创建
+            if "CPBatchRender Viewlayers render_resolution" not in vlayer:
+                vlayer["CPBatchRender Viewlayers render_resolution"] = [scene.render.resolution_x,scene.render.resolution_y]
+                #vlayer["CPBatchRender Viewlayers render_resolution"][1] = scene.render.resolution_y
+            vlayer.update()
+            
+            ui = vlayer.id_properties_ui("CPBatchRender Viewlayers render_resolution")
+            if bpy.app.version >= (4, 2):
+                # 更新属性
+                ui.update(description="Viewlayers render_resolution!")
+                #ui.update(subtype='INT')
+                ui.update(min=0)
+                ui.update(max=999999)
+            else:
+                ui.update(min=0)
+                ui.update(max=999999)
+            
+
+            if "CPBatchRender Viewlayers render_world" not in vlayer:
+                vlayer["CPBatchRender Viewlayers render_world"] = None
+                if scene.world:
+                    vlayer["CPBatchRender Viewlayers render_world"] = scene.world
+
+            vlayer.update()
+            
+            ui = vlayer.id_properties_ui("CPBatchRender Viewlayers render_world")
+            # 更新属性
+            if bpy.app.version >= (4, 2):
+                ui.update(description="Viewlayers render_world!")
+                ui.update(subtype='NONE')
+                ui.update(id_type='WORLD')
+            else:
+                ui.update(id_type='WORLD')
+
+    bpy.context.view_layer.update()
 
 def update_viewlayercamera():#检查视图层相机属性的相机是否是场景里的相机
     pass #即使相机不在当前场景也能渲染
@@ -3143,9 +3429,14 @@ def update_viewlayercamera():#检查视图层相机属性的相机是否是场�
     #     if cam.users==0:
     #         bpy.data.cameras.remove(cam)
 
+
+# https://blender.stackexchange.com/questions/143975/how-to-edit-a-custom-property-in-a-python-script/224284#224284
+
 def update_cp_use_scene_camera(self, context):#检查视图层是否有自定义属性记录每个视图层的自定义相机
     scenes = bpy.data.scenes
+    # c=bpy.context.scene
     for scene in scenes:
+        # bpy.context.window.scene = scene
         for vlayer in scene.view_layers:
             # 检查属性是否存在，不存在则创建
             if "CPBatchRender Viewlayers render_camera" not in vlayer:
@@ -3155,23 +3446,39 @@ def update_cp_use_scene_camera(self, context):#检查视图层是否有自定义
                 if scene.camera:
                     vlayer["CPBatchRender Viewlayers render_camera"] = scene.camera
 
-            bpy.context.view_layer.update()
+            vlayer.update()# bpy.context.view_layer.update()
             
             ui = vlayer.id_properties_ui("CPBatchRender Viewlayers render_camera")
-            # 更新属性
-            ui.update(description=f"Viewlayers render_camera!")
-            ui.update(subtype='NONE')#bpy.data.window_managers["WinMan"]. = 'DATA_BLOCK'bpy.data.window_managers["WinMan"]. = 'CAMERA'
-            ui.update(id_type='CAMERA')
-            # bpy.ops.wm.properties_edit(data_path="view_layer", property_name="CPBatchRender Viewlayers render_camera", property_type='DATA_BLOCK', is_overridable_library=False, description="Viewlayers render_camera!", subtype='NONE', id_type='CAMERA', eval_string="<bpy_struct, Object(\"Camera\") at 0x0000021DF961C120>")
+            # # 更新属性
+            if bpy.app.version >= (4, 2):
+                ui.update(description="Viewlayers render_camera!")
+                ui.update(subtype='NONE')#bpy.data.window_managers["WinMan"]. = 'DATA_BLOCK'bpy.data.window_managers["WinMan"]. = 'CAMERA'
+                ui.update(id_type='OBJECT')#'CAMERA'
+                # # bpy.ops.wm.properties_edit(data_path="view_layer", property_name="CPBatchRender Viewlayers render_camera",
+                #  # property_type='DATA_BLOCK', is_overridable_library=False, description="Viewlayers render_camera!", subtype='NONE', 
+                #  # id_type='CAMERA', eval_string="<bpy_struct, Object(\"Camera\") at 0x0000021DF961C120>")
+            else:
+                # ui.update(subtype='NONE')这个会导致闪退
+                ui.update(id_type='OBJECT') # 只有这个不会导致闪退，也就这个属性最重要
+                # ui.update(description="Viewlayers render_camera!")这个会导致闪退
+                
 
-            ##应该添加一个检测每个视图层属性里设置的相机是否在对应的场景里
+# blender 4.1里控制台里测试的可用的代码
+# >>> ui = C.view_layer.id_properties_ui("CPBatchRender Viewlayers render_camera")
+    # >>> ui.
+    #        as_dict(
+    #        clear(
+    #        update(
+    #        update_from(
+    # >>> ui.update(
+    # update( subtype=None, min=None, max=None, soft_min=None, soft_max=None, precision=None, step=None, default=None, id_type=None, items=None, description=None)
+    # .. method:: update( subtype=None, min=None, max=None, soft_min=None, soft_max=None, precision=None, step=None, default=None, id_type=None, items=None, description=None)
+    # Update the RNA information of the IDProperty used for interaction and
+    # display in the user interface. The required types for many of the keyword
+    # arguments depend on the type of the property.
+    # >>> ui.update(id_type='OBJECT')
 
-            ##或者添加一个检测变化的，检测到属性变化就自动检测
-    update_viewlayercamera()
-
-def update_cp_render_scene(self, context):#打开场景里只渲染活动视图层
-    update_viewlayercamera()
-    
+           
 def update_cp_use_scene_resolution(self, context):# 检查视图层是否有自定义属性记录自定义分辨率
     scenes = bpy.data.scenes
     for scene in scenes:
@@ -3180,18 +3487,20 @@ def update_cp_use_scene_resolution(self, context):# 检查视图层是否有自�
             if "CPBatchRender Viewlayers render_resolution" not in vlayer:
                 vlayer["CPBatchRender Viewlayers render_resolution"] = [scene.render.resolution_x,scene.render.resolution_y]
                 #vlayer["CPBatchRender Viewlayers render_resolution"][1] = scene.render.resolution_y
-            bpy.context.view_layer.update()
+            vlayer.update()
+
             
             ui = vlayer.id_properties_ui("CPBatchRender Viewlayers render_resolution")
-            # 更新属性
-            ui.update(description=f"Viewlayers render_resolution!")
-            #ui.update(subtype='INT')
-            ui.update(min=0)
-            ui.update(max=999999)
-            ##应该添加一个检测每个视图层属性里设置的相机是否在对应的场景里
-
-            ##或者添加一个检测变化的，检测到属性变化就自动检测
-    update_viewlayercamera()
+            if bpy.app.version >= (4, 2):
+                # 更新属性
+                ui.update(description="Viewlayers render_resolution!")
+                #ui.update(subtype='INT')
+                ui.update(min=0)
+                ui.update(max=999999)
+            else:
+                ui.update(min=0)
+                ui.update(max=999999)
+                
 
 def update_cp_use_scene_world(self, context):#检查视图层是否有自定义属性记录自定义世界环境
     scenes = bpy.data.scenes
@@ -3203,40 +3512,48 @@ def update_cp_use_scene_world(self, context):#检查视图层是否有自定义�
                 if scene.world:
                     vlayer["CPBatchRender Viewlayers render_world"] = scene.world
 
-            bpy.context.view_layer.update()
+            vlayer.update()
             
             ui = vlayer.id_properties_ui("CPBatchRender Viewlayers render_world")
             # 更新属性
-            ui.update(description=f"Viewlayers render_world!")
-            ui.update(subtype='NONE')#bpy.data.window_managers["WinMan"]. = 'DATA_BLOCK'bpy.data.window_managers["WinMan"]. = 'CAMERA'
-            ui.update(id_type='WORLD')
-            # ValueError: IDPropertyUIManager.update: 'CAMERA1' not found in ('ACTION', 'ARMATURE', 'BRUSH', 'CACHEFILE', 'CAMERA', 'COLLECTION', 'CURVE', 'CURVES', 'FONT', 'GREASEPENCIL', 'GREASEPENCIL_V3', 'IMAGE', 'KEY', 'LATTICE', 'LIBRARY', 'LIGHT', 'LIGHT_PROBE', 'LINESTYLE', 'MASK', 'MATERIAL', 'MESH', 'META', 'MOVIECLIP', 'NODETREE', 'OBJECT', 'PAINTCURVE', 'PALETTE', 'PARTICLE', 'POINTCLOUD', 'SCENE', 'SCREEN', 'SOUND', 'SPEAKER', 'TEXT', 'TEXTURE', 'VOLUME', 'WINDOWMANAGER', 'WORKSPACE', 'WORLD')
+            if bpy.app.version >= (4, 2):
+                ui.update(description="Viewlayers render_world!")
+                ui.update(subtype='NONE')#bpy.data.window_managers["WinMan"]. = 'DATA_BLOCK'bpy.data.window_managers["WinMan"]. = 'CAMERA'
+                ui.update(id_type='WORLD')
+                # ValueError: IDPropertyUIManager.update: 'CAMERA1' not found in ('ACTION', 'ARMATURE', 'BRUSH', 'CACHEFILE', 'CAMERA', 'COLLECTION', 'CURVE', 'CURVES', 'FONT', 'GREASEPENCIL', 'GREASEPENCIL_V3', 'IMAGE', 'KEY', 'LATTICE', 'LIBRARY', 'LIGHT', 'LIGHT_PROBE', 'LINESTYLE', 'MASK', 'MATERIAL', 'MESH', 'META', 'MOVIECLIP', 'NODETREE', 'OBJECT', 'PAINTCURVE', 'PALETTE', 'PARTICLE', 'POINTCLOUD', 'SCENE', 'SCREEN', 'SOUND', 'SPEAKER', 'TEXT', 'TEXTURE', 'VOLUME', 'WINDOWMANAGER', 'WORKSPACE', 'WORLD')
+            else:
+                ui.update(id_type='WORLD')
 
+           
 
-            ##应该添加一个检测每个视图层属性里设置的相机是否在对应的场景里
-
-            ##或者添加一个检测变化的，检测到属性变化就自动检测
+def update_cp_render_scene(self, context):#检查所有场景每个视图层下是否有3个属性
     update_viewlayercamera()
+    # update_cp_use_scene_camera(self, context)
+    # update_cp_use_scene_resolution(self, context)
+    # update_cp_use_scene_world(self, context)
+    # bpy.context.view_layer.update()
+
 
 # 添加一个标志变量来无限循环控制递归
 _is_updating = False
 def update_scenes_props(self, context):#设置一个场景里的保存路径后自动同步其它场景的设置
-    global _is_updating
-    if _is_updating:#避免下面修改其它场景属性后会递归调用，导致无限循环
-        return
+    pass
+    # global _is_updating
+    # if _is_updating:#避免下面修改其它场景属性后会递归调用，导致无限循环
+    #     return
     
-    _is_updating = True
-    try:
-        nowprop=context.scene.CPBR_Main_Props
-        for scene in bpy.data.scenes:
-            if scene != context.scene:
-                scene.CPBR_Main_Props.use_auto_blenderpath = nowprop.use_auto_blenderpath
-                scene.CPBR_Main_Props.directory=nowprop.directory
-                scene.CPBR_Main_Props.scale_preview=nowprop.scale_preview
-                scene.CPBR_Main_Props.show_all_preview=nowprop.show_all_preview 
-                scene.CPBR_Main_Props.auto_saverendertext=nowprop.auto_saverendertext
-    finally:
-        _is_updating = False
+    # _is_updating = True
+    # try:
+    #     nowprop=context.scene.CPBR_Main_Props
+    #     for scene in bpy.data.scenes:
+    #         if scene != context.scene:
+    #             # scene.CPBR_Main_Props.use_auto_blenderpath = nowprop.use_auto_blenderpath
+    #             # scene.CPBR_Main_Props.directory=nowprop.directory
+    #             # scene.CPBR_Main_Props.scale_preview=nowprop.scale_preview
+    #             # scene.CPBR_Main_Props.show_all_preview=nowprop.show_all_preview 
+    #             # scene.CPBR_Main_Props.auto_saverendertext=nowprop.auto_saverendertext
+    # finally:
+    #     _is_updating = False
 
 
 # 所有场景属性汇总---------------------------------------------------- #
@@ -3251,7 +3568,7 @@ class Materialby_N_Colors_props(PropertyGroup):
 
     edit_same_color_as_active_object_B2B90 :FloatVectorProperty(
         name='Color',
-        description='Adjust the color properties of objects with the same color property as the active object',
+        description='Edit color properties of objects with the same color property as the active object',
         size=4, default=(1.0, 1.0, 1.0, 1.0), subtype='COLOR', unit='NONE', min=0.0, max=1.0, step=5, precision=2, 
         get=get_active_object_color,
         set=set_edit_same_color_as_active_object_B2B90,
@@ -3272,16 +3589,20 @@ class Materialby_N_Colors_props(PropertyGroup):
 
 
     ##批量渲染
-    # 添加整数属性用于存储活动场景索引
-    cp_change_active_index : IntProperty(name="Change Active Scene",get=get_ac_scene_list_index,
-        set=set_ac_scene_list_index)
+        # 添加整数属性用于存储活动场景索引 改到WindowManager下，不然每个场景都不一样
+        # cp_change_active_scene_index : IntProperty(name="Change Active Scene",get=get_ac_scene_list_index,
+        #     set=set_ac_scene_list_index)
+
+    cp_active_viewlayer_index : IntProperty(name="Change Active Scene")#,get=get_ac_scene_list_index,
+        # set=set_ac_scene_list_index)
+
+    zhedie:BoolProperty(name="",default=False)#列表里折叠
 
     cp_render_scene:BoolProperty(name="Render this scene in batch rendering",
             description="",
             default=True,
             update=update_cp_render_scene,
         )
-
 
     cp_use_scene_camera:BoolProperty(name="All viewlayers of the scene rendered by scene camera",
             description="",
@@ -3305,40 +3626,61 @@ class Materialby_N_Colors_props(PropertyGroup):
             description="",
             default=False,
         )
+    #移动到WindowManager下
+        # use_auto_blenderpath: BoolProperty(name="AutoblendPath",
+        #                                           description="Save to the directory as blend file!",
+        #                                           default=False,
+        #                                           update=update_scenes_props)
+
+        # auto_saverendertext: BoolProperty(name="Save render record",
+        #                                           description="Save the rendering record to the txt file!",
+        #                                           default=False,
+        #                                           update=update_scenes_props)
+
+        # directory: StringProperty(name="Batch render output paths",
+        #                                     description="",
+        #                                     default="C:/Blender-render",
+        #                                     maxlen=4096,
+        #                                     subtype="DIR_PATH",
+        #                                     update=update_scenes_props
+        #                                     )
+
+        # scale_preview: FloatProperty(name="Thumbnails scale",description="Thumbnails scale",default=5.0, unit='NONE', min=1.0,update=update_scenes_props)
+        # show_all_preview: BoolProperty(name="Show all thumbnails",description="",default=False,update=update_scenes_props)
+
+    show_scene_preview: BoolProperty(name="Displays thumbnails of all view layers for that scene",description="",default=True)
+
+
+class WM_Materialby_N_Colors_props(PropertyGroup):
+    ##批量渲染
+    # 添加整数属性用于存储活动场景索引 改到WindowManager下，不然每个场景都不一样
+    cp_change_active_scene_index : IntProperty(name="Change Active Scene",get=get_ac_scene_list_index,
+        set=set_ac_scene_list_index)
 
     use_auto_blenderpath: BoolProperty(name="AutoblendPath",
                                               description="Save to the directory as blend file!",
-                                              default=False,
-                                              update=update_scenes_props)
+                                              default=False)
 
     auto_saverendertext: BoolProperty(name="Save render record",
                                               description="Save the rendering record to the txt file!",
-                                              default=False,
-                                              update=update_scenes_props)
+                                              default=False)
 
     directory: StringProperty(name="Batch render output paths",
                                         description="",
                                         default="C:/Blender-render",
                                         maxlen=4096,
-                                        subtype="DIR_PATH",
-                                        update=update_scenes_props
+                                        subtype="DIR_PATH"
                                         )
 
-    scale_preview: FloatProperty(name="Thumbnails scale",description="Thumbnails scale",default=5.0, unit='NONE', min=1.0,update=update_scenes_props)
-    show_all_preview: BoolProperty(name="Show all thumbnails",description="",default=False,update=update_scenes_props)
-
-    show_scene_preview: BoolProperty(name="Displays thumbnails of all view layers for that scene",description="",default=True)
-
-
-# def get_prefs():
-#     return bpy.context.preferences.addons[__package__].preferences
+    scale_preview: FloatProperty(name="Thumbnails scale",description="Thumbnails scale",default=5.0, unit='NONE', min=1.0)
+    show_all_preview: BoolProperty(name="Show all thumbnails",description="",default=False)
 
 # class Materialby_N_Colors_AddonPreferences_9F6AA(bpy.types.AddonPreferences):
-#     bl_idname = __package__
+    #     bl_idname = __package__
 
-#     #放场景属性里不对，应该放插件设置里
-#     scale_preview: FloatProperty(name="缩略图缩放",default=5.0, unit='NONE', min=1.0)
-#     show_preview: BoolProperty(name="显示全部缩略图",description="",default=False)
+    #     #放场景属性里不对，应该放插件设置里
+    #     scale_preview: FloatProperty(name="缩略图缩放",default=5.0, unit='NONE', min=1.0)
+    #     show_preview: BoolProperty(name="显示全部缩略图",description="",default=False)
 
 class TranslationHelper():
     def __init__(self, name: str, data: dict, lang='zh_CN'):
@@ -3368,8 +3710,8 @@ zhdata = {
     'Material by N-Objects': '根据物体切换材质',
     
     'Select all use [%s] objs': '"选中所有使用 [%s] 材质的物体"',
-    'Set objs`s property to be equal to the active object\'s property value.': '设置与活动物体属性值相等的物体属性',
-    'Set properties of all selected objects (active object)': '设置所有选中物体(活动物体)属性',
+    'Edit prop for objs matching active obj\'s prop value': '设置与活动物体属性值相等的物体属性',
+    'Edit selected obj\'s prop': '设置选中物的属性',
     'Add prop to objs using this material': '有使用该材质的物体缺失属性!',#有使用该材质的物体缺失属性
     'Add/Select Node': '添加/选中属性切换节点',
     'Material by N-Viewlayer(Scene)': '根据视图层(场景)切换材质',
@@ -3377,10 +3719,10 @@ zhdata = {
     'There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"': '有多个Viewlayer Group属性的节点树,它们都会被自动刷新,把不用自动刷新的节点树属性改为默认',
 
     'Sets the property color of selected objects': '设置所有选中物体(活动物体)的颜色属性',
-    'Adjust the color properties of objects with the same color property as the active object': '调整所有与活动物体同色的物体颜色属性',
+    'Edit color properties of objects with the same color property as the active object': '调整所有与活动物体同色的物体颜色属性',
 
     'Sets the property float of selected objects': '设置所有选中物体(活动物体)的浮点属性',
-    'Adjust the float properties of objects that have the same float property value as the active object': '调整所有与活动物体属性浮点值相等的物体浮点属性值',
+    'Edit float properties of objects with the same float property as the active object': '调整所有与活动物体属性浮点值相等的物体浮点属性值',
     'Automatically add properties to each view layer in all scenes\nAdd nodes to editting tree\nRefresh properties after the view layer changes': '自动给所有场景的每个视图层添加属性\n给当前节点树添加节点\n视图层变化后刷新属性',
     'There are multiple node trees with \"Viewlayer Group\" properties in Blender! However, only one nodetree with this property can run the operation!': 'Blender里有多个Viewlayer Group属性的节点树！但只能有一个该属性的节点组才能运行操作!',
     'Select Objects with Same Attribute': '选择与活动对象属性颜色一样的物体',
@@ -3422,38 +3764,7 @@ zhdata = {
     'Displays thumbnails of all view layers for that scene': '显示该场景的所有视图层缩略图',
 }
 
-CPBRender_zh_CN = TranslationHelper('CPBRender_zh_CN', zhdata)
 CPBRender_zh_HANS = TranslationHelper('CPBRender_zh_HANS', zhdata, lang='zh_HANS')
-
-
-###⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊用msgbus.subscribe_rna监听⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊⇊
-    # def keep_nodetree_name():
-    #     print("upname")
-    #     t=[]
-    #     for node_tree in bpy.data.node_groups:
-    #         if node_tree.Matby_N_Colors_type=='Viewlayer Prop':
-    #                 t.append(node_tree)
-    #     # if len(t)==1:
-    #     if t:
-    #         t[0].name=".CP_ViewLayer_Material"
-    #         if len(t)>1:
-    #             makejustone_viewlayer_prop_nodetree()
-
-    # owner = object()
-    # def register_msgbus(owner):
-    #     print("register_msgbus")
-    #     # 订阅节点树名字修改后自动运行   没用
-    #     bpy.msgbus.subscribe_rna(
-    #         key=(bpy.types.NodeTree, 'name'),
-    #         owner=owner, args=(), 
-    #         notify=keep_nodetree_name)
-    #     bpy.msgbus.subscribe_rna(
-    #         key=(bpy.types.NodeGroup, 'name'), #
-    #         owner=owner, args=(), 
-    #         notify=keep_NodeGroup_name)
-
-###⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈用msgbus.subscribe_rna监听⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈⇈
-
 
 classes = (
     NODE_OT_Add_Prop_Attributenode_285D0,
@@ -3471,11 +3782,12 @@ classes = (
     #SNA_PT_MATERIAL_BY_Nviewlayer_85AF2,
 
     CPBR_UL_viewlayer_list,
+    CPBR_UL_scenes_list,
     CPBR_PT_UIListPanel,
     CPBR_OT_SwitchSceneViewLayer,
     CPBR_OT_BatchRender,
     CPBR_OT_RenderViewport,
-
+    WM_Materialby_N_Colors_props,
     #Materialby_N_Colors_AddonPreferences_9F6AA,
     
 )
@@ -3502,13 +3814,10 @@ def register():
         default="Default",
         )
 
+    bpy.types.WindowManager.WM_CPBR_Main_Props = bpy.props.PointerProperty(name='New Property', description='', type=WM_Materialby_N_Colors_props)
 
     #bpy.app.translations.register(__name__, langs)
-    if bpy.app.version < (4, 0, 0):
-        CPBRender_zh_CN.register()
-    else:
-        CPBRender_zh_CN.register()
-        CPBRender_zh_HANS.register()
+    CPBRender_zh_HANS.register()
 
 def unregister():
     for cls in reversed(classes):#自定义工具图标
@@ -3517,11 +3826,10 @@ def unregister():
     del bpy.types.Scene.CPBR_Main_Props
     del bpy.types.NodeTree.Matby_N_Colors_type
     #bpy.app.translations.unregister(__name__)
-    if bpy.app.version < (4, 0, 0):
-        CPBRender_zh_CN.unregister()
-    else:
-        CPBRender_zh_CN.unregister()
-        CPBRender_zh_HANS.unregister()
+
+    del bpy.types.WindowManager.WM_CPBR_Main_Props
+
+    CPBRender_zh_HANS.unregister()
 
     
 if __name__ == "__main__":
