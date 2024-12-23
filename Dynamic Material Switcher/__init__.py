@@ -17,6 +17,7 @@ import os
 import bpy
 import sys
 import math
+import time
 from datetime import datetime
 from pathlib import Path
 import random
@@ -41,6 +42,14 @@ from bpy.props import (
 from bpy.app.translations import pgettext_iface as iface_
 
 import textwrap
+
+def get_icon_value(icon_name: str) -> int:
+    icon_items = bpy.types.UILayout.bl_rna.functions["prop"].parameters["icon"].enum_items.items()
+    icon_dict = {tup[1].identifier: tup[1].value for tup in icon_items}
+    icon_value = icon_dict.get(icon_name, -1)
+    if icon_value == -1:
+        return icon_dict.get('QUESTION', 1)
+    return icon_value
 
 ##插件PowerProps值得参考
 
@@ -445,7 +454,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
         # if context.space_data.shader_type == 'OBJECT':
         if bpy.app.version >= (4, 1):
             header, panel = layout.panel("my_panel_a", default_closed=False)#bl4.1
-            header.label(text="Material by N-Objects",icon="MESH_MONKEY")
+            header.label(text="Material by N-Objects",icon_value=get_icon_value("MESH_MONKEY"))
         else:
             r = layout.row(heading='', align=False)
             r.alignment = 'CENTER'.upper()
@@ -460,15 +469,15 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
             if obj and ("CP Custom colors" in obj or "CP Custom float" in obj):
                 box_CCCCC = layout.box()
                 col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
-                col.label(text='Edit selected obj\'s prop', icon="STICKY_UVS_LOC")
+                col.label(text='Edit selected obj\'s prop', icon_value=get_icon_value("STICKY_UVS_LOC"))
                 row_D = col.row(heading='', align=False)
                 row_D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
-                op=row_D.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
+                op=row_D.operator('mnc.randomize_property', text='', icon_value=get_icon_value("MOD_NOISE"), emboss=True, depress=False)
                 op.prop_name="CP Custom colors"
 
                 row_E = col.row(heading='', align=False)
                 row_E.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
-                op=row_E.operator('mnc.randomize_property', text='', icon="MOD_NOISE", emboss=True, depress=False)
+                op=row_E.operator('mnc.randomize_property', text='', icon_value=get_icon_value("MOD_NOISE"), emboss=True, depress=False)
                 op.prop_name="CP Custom float"
 
 
@@ -485,7 +494,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
 
             row = layout.row(heading='', align=True)
             row.scale_y = 1.0
-            icon="ADD"
+            icon=get_icon_value("ADD")
             all_objects = bpy.data.objects
             objects_with_active_material = []
             for obj in all_objects:
@@ -495,12 +504,12 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
             for obj in objects_with_active_material:
                 if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
                     row.alert = True
-                    icon="FILE_REFRESH"
+                    icon=get_icon_value("FILE_REFRESH")
                     row.scale_y = 2.0
                     tex='Add prop to objs using this material'#给使用该材质的物体添加属性
                     break  # 只要有一个满足条件就停止循环
 
-            row.operator('wm.add_prop_and_attributenode_285d0', text=iface_(tex), icon=icon, emboss=True, depress=False)
+            row.operator('wm.add_prop_and_attributenode_285d0', text=iface_(tex), icon_value=icon, emboss=True, depress=False)
 
 
         scenes = bpy.data.scenes
@@ -513,7 +522,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
         pan=True
         if bpy.app.version >= (4, 1):
             header, pan = layout.panel("my_panel_b", default_closed=False)#bl4.1
-            header.label(text="Material by N-Viewlayer(Scene)",icon="RENDER_RESULT")
+            header.label(text="Material by N-Viewlayer(Scene)",icon_value=get_icon_value("RENDER_RESULT"))
         else:
             r = layout.row(heading='', align=False)
             r.alignment = 'CENTER'.upper()
@@ -535,7 +544,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
                 if panels != vl_count:
                     row.alert = True
                     t='Refresh node'
-            row.operator('wm.add_prop_and_node_to_viewlayer', text=t, icon="RENDER_RESULT", emboss=True, depress=False)
+            row.operator('wm.add_prop_and_node_to_viewlayer', text=t, icon_value=get_icon_value("RENDER_RESULT"), emboss=True, depress=False)
 
             return
             # if len(viewlayer_prop_nodes)>1:
@@ -2267,11 +2276,21 @@ class CPBR_PT_UIListPanel(Panel):
         if not use_blendpath:
             layout.prop(wm.WM_CPBR_Main_Props, "directory", text="")
 
+        global bugmes,progress,renderscenename
+        if CPBR_OT_BatchRender.running:
+            text=renderscenename
+            # layout.label(text=text, icon_value=0)
+            layout.progress(
+                    factor=progress,
+                    type="BAR",
+                    text=renderscenename
+                )
 
         row = layout.row(heading='', align=True)
         row.scale_y = 2.5
+        row.enabled=not CPBR_OT_BatchRender.running
         row.operator("cpbr.batch_render", icon='RENDER_STILL',)
-        global bugmes
+        
         if bugmes:
             # 将字符串按照 '-' 分割
             segments = bugmes.split('- ')
@@ -2280,27 +2299,28 @@ class CPBR_PT_UIListPanel(Panel):
                 r=col.row(align=True)
                 r.alert = True
                 r.label(text=t, icon='ERROR')
-            # layout.label(text="Batch rendering....", icon_value=1)
-        #     # global progress
-        #     # layout.progress(factor = progress, text = "Updating")
+        
         if bpy.app.version >= (4, 2):
             layout.separator(type="LINE")  
         else:
             layout.separator()
 
-        #if CPBR_OT_BatchRender.running:
-            # text=renderscenename
-            # layout.label(text=text, icon_value=0)
-        #layout.label(text="视图层设置独立相机时记得选择对应场景里的相机!", icon_value=1)
-        layout.label(text=iface_("Batch rendering is saved with the compositor\'s output node!"), icon='QUESTION')
-        layout.label(text=iface_("Only need one viewlayer node and one output node in compositor!"), icon='QUESTION')
-        layout.label(text=iface_("Other plugins that automatically set the path of the output node will affect the save path!"), icon='QUESTION')
+        
+        #layout.label(text="视图层设置独立相机时记得选择对应场景里的相机!", icon_value=get_icon_value('QUESTION'))
+        v=get_icon_value('QUESTION')
+        layout.label(text=iface_("Batch rendering is saved with the compositor\'s output node!"),icon_value=v)
+        layout.label(text=iface_("Only need one viewlayer node and one output node in compositor!"),icon_value=v)
+        layout.label(text=iface_("Other plugins that automatically set the path of the output node will affect the save path!"),icon_value=v)
 
         if bpy.app.version >= (4, 2):
             layout.separator(type="LINE")  
         else:
             layout.separator()
         ##！！！同步渲染器的面板何和色彩空和视图层的
+        if "sync_render_sets" not in bpy.context.preferences.addons:
+            value=get_icon_value('SCRIPT')
+            layout.operator("wm.url_open", text="Sync Render Sets",icon_value=value).url = "https://extensions.blender.org/approval-queue/sync-render-sets/"
+
 
 # 操作类用于切换场景和视图层
 class CPBR_OT_SwitchSceneViewLayer(Operator):
@@ -2920,16 +2940,21 @@ class CPBR_OT_BatchRender(Operator):
         # print(render_engine)
         if len(render_engine)>1:
             wm = context.window_manager
-            return wm.invoke_props_dialog(self, width=400)  #调整width参数来控制弹出面板的宽度
+            return wm.invoke_props_dialog(self, width=400)
   
         if render_list:
+            noneedchange=False
             for window in bpy.context.window_manager.windows:
                 # 获取当前窗口的上下文，以便安全地操作区域
                 screen = window.screen
                 for area in screen.areas:
-                    if area.type == 'VIEW_3D':
+                    if area.type == 'VIEW_3D' and area.spaces[0].shading.type not in ['SOLID','WIREFRAME']:
                         area.spaces[0].shading.type = 'SOLID'
+                        noneedchange=True
             context.area.tag_redraw()
+            if noneedchange: 
+                time.sleep(1)  # 延迟1秒
+                bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
             # 自动保存文件
             bpy.ops.wm.save_mainfile()
             return self.execute(context)
@@ -2959,113 +2984,124 @@ class CPBR_OT_BatchRender(Operator):
         layout.separator()
 
     def execute(self, context):
-        global renderscenename, bugmes
-        bugmes = ''
-        running = True
+        try:
+            global renderscenename, bugmes,progress
+            bugmes = ''
+            CPBR_OT_BatchRender.running = True
 
-        render_list = self.render_list
+            render_list = self.render_list
 
-        if render_list:
-            savescene = context.scene
+            if render_list:
+                savescene = context.scene
 
-            bpy.context.scene.CPBR_Main_Props.cp_batchrendering = True
-            r = [i for i in bpy.data.images if i.name == 'Render Result']
-            r = r[0]
-            r.render_slots.active_index = 0
+                bpy.context.scene.CPBR_Main_Props.cp_batchrendering = True
+                r = [i for i in bpy.data.images if i.name == 'Render Result']
+                r = r[0]
+                r.render_slots.active_index = 0
 
-            # 清空渲染槽名字
-            for solt in r.render_slots:
-                solt.name = "Solt"  # 修改槽的名字
+                # 清空渲染槽名字
+                for solt in r.render_slots:
+                    solt.name = "Solt"  # 修改槽的名字
 
-            step = 0
-            total = len(r.render_slots)
+                progress = 0
+                step = 0
+                total = len(r.render_slots)
 
-            # 鼠标显示进度
-            wm = bpy.context.window_manager
-            tot = len(render_list)
-            wm.progress_begin(0, tot)
+                # 鼠标显示进度
+                wm = bpy.context.window_manager
+                tot = len(render_list)
+                # wm.progress_begin(0, tot)
 
-            for entry in render_list:
-                i = step
-                if step == 0:
-                    i = tot / 10  # 从10%开始显示
-                wm.progress_update(i)
-                try:
-                    r.render_slots.active_index = step # 每个场景切换一个渲染槽就行了
-                except:
-                    pass
+                for entry in render_list:
+                    i = step
+                    if step == 0:
+                        i = tot / 10  # 从10%开始显示
+                    # wm.progress_update(i) 有bpy.ops.wm.redraw_timer后这个不显示了也用不着了
+                    try:
+                        r.render_slots.active_index = step # 每个场景切换一个渲染槽就行了
+                    except:
+                        pass
 
-                # 设置场景相机
-                bpy.data.scenes[entry['scene'].name].camera = entry['camera']
+                    renderscenename=f"{entry['scene'].name}[{entry['layer'].name}] rending--({step+1}/{tot})"
 
-                bpy.data.scenes[entry['scene'].name].render.resolution_x = entry['res_x']
-                bpy.data.scenes[entry['scene'].name].render.resolution_y = entry['res_y']
+                    progress += 1/tot
+                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
-                bpy.data.scenes[entry['scene'].name].world = entry['world']
+                    # 设置场景相机
+                    bpy.data.scenes[entry['scene'].name].camera = entry['camera']
 
-                # 可以在这里添加渲染逻辑或其他操作
-                # r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
-                bpy.context.view_layer.update()
+                    bpy.data.scenes[entry['scene'].name].render.resolution_x = entry['res_x']
+                    bpy.data.scenes[entry['scene'].name].render.resolution_y = entry['res_y']
 
-                ## 如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
-                
-                if bpy.data.scenes[entry['scene'].name].use_nodes:
-                    for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
-                        if node.type == "R_LAYERS":
-                            node.scene = bpy.data.scenes[entry['scene'].name]
-                            node.layer = entry['layer'].name
-                        
-                if wm.WM_CPBR_Main_Props.use_auto_blenderpath:  # 保存到blend文件同目录下
-                    path = Path(bpy.path.abspath('//'))  # 保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path, //就代表blender文件路径
-                else:  # 自定义目录
-                    path = Path(wm.WM_CPBR_Main_Props.directory)
-                # 工程路径和blender文件名
-                blendPath = bpy.context.blend_data.filepath
-                blendName = bpy.path.basename(blendPath)
-                #blendName = blendName.replace(" ", "")#替换所有空格
-                #print("blendName",blendName)
-                # 项目名称，'/'和'_'切换可以文件和场景名建立文件夹管理
-                projectName = '未保存/'
-                if  blendPath!= '':
-                    noblendname=os.path.splitext(blendName)[0]#去除.blend后缀的名字
-                    cleanblendName = noblendname.strip()#strip是Python中用于字符串处理的方法之一，去除字符串开头和结尾的空白字符（空格、制表符、换行符等
-                    #print("cleanblendName:::::::::",cleanblendName)
-                    projectName = cleanblendName + '/'        
+                    bpy.data.scenes[entry['scene'].name].world = entry['world']
 
-                now = datetime.now()
-                base_path = path / (projectName + entry['scene'].name  + '_'+ entry['layer'].name  + '_'+ now.strftime('%Y%m%d_%H-%M-%S'))#
-                
-                bpy.data.scenes[entry['scene'].name].render.filepath = str(base_path)
-                if bpy.data.scenes[entry['scene'].name].use_nodes:
-                    for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
-                        if node.type == "OUTPUT_FILE":
-                            node.base_path = str(base_path)
-                            #node.base_path = str(base_path / node.name)
+                    # 可以在这里添加渲染逻辑或其他操作
+                    # r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
+                    bpy.context.view_layer.update()
 
-                #bpy.ops.render.render(use_viewport=True, write_still=True)#write_still是否保存属性保存面板里设置的保存
-                # print(entry['scene'].name)
-                # for node in context.scene.node_tree.nodes:
-                #     if node.type == "R_LAYERS":
-                #         node.scene = bpy.data.scenes[entry['scene'].name]
-                #         node.layer = entry['layer'].name
+                    ## 如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
+                    
+                    if bpy.data.scenes[entry['scene'].name].use_nodes:
+                        for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
+                            if node.type == "R_LAYERS":
+                                node.scene = bpy.data.scenes[entry['scene'].name]
+                                node.layer = entry['layer'].name
+                            
+                    if wm.WM_CPBR_Main_Props.use_auto_blenderpath:  # 保存到blend文件同目录下
+                        path = Path(bpy.path.abspath('//'))  # 保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path, //就代表blender文件路径
+                    else:  # 自定义目录
+                        path = Path(wm.WM_CPBR_Main_Props.directory)
+                    # 工程路径和blender文件名
+                    blendPath = bpy.context.blend_data.filepath
+                    blendName = bpy.path.basename(blendPath)
+                    #blendName = blendName.replace(" ", "")#替换所有空格
+                    #print("blendName",blendName)
+                    # 项目名称，'/'和'_'切换可以文件和场景名建立文件夹管理
+                    projectName = '未保存/'
+                    if  blendPath!= '':
+                        noblendname=os.path.splitext(blendName)[0]#去除.blend后缀的名字
+                        cleanblendName = noblendname.strip()#strip是Python中用于字符串处理的方法之一，去除字符串开头和结尾的空白字符（空格、制表符、换行符等
+                        #print("cleanblendName:::::::::",cleanblendName)
+                        projectName = cleanblendName + '/'        
 
-                bpy.ops.render.render(use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
-                if wm.WM_CPBR_Main_Props.auto_saverendertext:
-                    renderfinishtime=datetime.now()
-                    auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
+                    now = datetime.now()
+                    base_path = path / (projectName + entry['scene'].name  + '_'+ entry['layer'].name  + '_'+ now.strftime('%Y%m%d_%H-%M-%S'))#
+                    
+                    bpy.data.scenes[entry['scene'].name].render.filepath = str(base_path)
+                    if bpy.data.scenes[entry['scene'].name].use_nodes:
+                        for node in bpy.data.scenes[entry['scene'].name].node_tree.nodes:
+                            if node.type == "OUTPUT_FILE":
+                                node.base_path = str(base_path)
+                                #node.base_path = str(base_path / node.name)
+
+                    #bpy.ops.render.render(use_viewport=True, write_still=True)#write_still是否保存属性保存面板里设置的保存
+                    # print(entry['scene'].name)
+                    # for node in context.scene.node_tree.nodes:
+                    #     if node.type == "R_LAYERS":
+                    #         node.scene = bpy.data.scenes[entry['scene'].name]
+                    #         node.layer = entry['layer'].name
+
+                    bpy.ops.render.render(use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
+                    if wm.WM_CPBR_Main_Props.auto_saverendertext:
+                        renderfinishtime=datetime.now()
+                        auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
 
 
 
-                step += 1
-                if step>total:step = 0
+                    step += 1
+                    if step>total:step = 0
 
-                #print(f"渲染：{entry['scene'].name} /// {entry['layer'].name}")
+                    #print(f"渲染：{entry['scene'].name} /// {entry['layer'].name}")
 
-            wm.progress_end()
+        except Exception as err:
+            print('--CPBR_OT_BatchRender---', err, end=' | ')
 
-        running = False
-        bpy.context.scene.CPBR_Main_Props.cp_batchrendering = False
-        renderscenename=""
+        finally: #以确保在异常情况下正确恢复
+            # wm.progress_end()
+            progress=1
+            CPBR_OT_BatchRender.running = False
+            bpy.context.scene.CPBR_Main_Props.cp_batchrendering = False
+            renderscenename=""
 
         return {'FINISHED'}
 
@@ -3764,7 +3800,7 @@ zhdata = {
     'Displays thumbnails of all view layers for that scene': '显示该场景的所有视图层缩略图',
 }
 
-CPBRender_zh_HANS = TranslationHelper('CPBRender_zh_HANS', zhdata, lang='zh_HANS')
+CPBRender_zh_HANS = TranslationHelper('CPBRender', zhdata, lang='zh_HANS')
 
 classes = (
     NODE_OT_Add_Prop_Attributenode_285D0,
@@ -3814,7 +3850,7 @@ def register():
         default="Default",
         )
 
-    bpy.types.WindowManager.WM_CPBR_Main_Props = bpy.props.PointerProperty(name='New Property', description='', type=WM_Materialby_N_Colors_props)
+    bpy.types.WindowManager.WM_CPBR_Main_Props = bpy.props.PointerProperty(name='CPBR_Main_Props', description='', type=WM_Materialby_N_Colors_props)
 
     #bpy.app.translations.register(__name__, langs)
     CPBRender_zh_HANS.register()
