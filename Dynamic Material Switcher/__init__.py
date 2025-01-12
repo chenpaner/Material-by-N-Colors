@@ -131,11 +131,11 @@ class NODE_OT_Add_Prop_Attributenode_285D0(Operator):
 
         nodes = context.space_data.edit_tree.nodes
         if colornode is None:
-            prev_context = bpy.context.area.type
-            bpy.context.area.type = 'NODE_EDITOR'
+            # prev_context = bpy.context.area.type
+            # bpy.context.area.type = 'NODE_EDITOR'
             #bpy.ops.node.add_node('INVOKE_DEFAULT', use_transform=True, type='ShaderNodeAttribute')#这个是根据鼠标位置定位 
             colornode: bpy.types.ShaderNodeAttribute = nodes.new(bpy.types.ShaderNodeAttribute.__name__)
-            bpy.context.area.type = prev_context
+            # bpy.context.area.type = prev_context
 
             colornode.name = 'CP Custom colors'
             colornode.label = 'CP Custom colors'
@@ -2286,6 +2286,10 @@ class CPBR_PT_UIListPanel(Panel):
                     text=renderscenename
                 )
 
+        # layout.prop(context.scene.render, "use_lock_interface")这个本来就在渲染菜单里锁定界面，但似乎在'INVOKE_DEFAULT'这样渲染才有用
+
+        # layout.template_running_jobs()## bpy.ops.render.render('INVOKE_DEFAULT'这样渲染才有用
+
         row = layout.row(heading='', align=True)
         row.scale_y = 2.5
         row.enabled=not CPBR_OT_BatchRender.running
@@ -2401,7 +2405,7 @@ def update_ui():
     return None  # Stop the timer
 
 bugmes=''
-
+# 待参考插件 https://github.com/BlenderHQ/multiple_camera_render/tree/26b71cab04210fa14b6441bf638aa9b66ee9eb35
 class CPBR_OT_BatchRender(Operator):
     bl_idname = "cpbr.batch_render"
     bl_label = "Batch Render"
@@ -2992,16 +2996,21 @@ class CPBR_OT_BatchRender(Operator):
             render_list = self.render_list
 
             if render_list:
+                tot = len(render_list)
+                
                 savescene = context.scene
-
+                # context.scene.render.use_lock_interface = True #在渲染过程中锁定接口，以便为渲染器提供更多内存，这个本来就在渲染菜单里锁定界面，但似乎在'INVOKE_DEFAULT'这样渲染才有用
                 bpy.context.scene.CPBR_Main_Props.cp_batchrendering = True
                 r = [i for i in bpy.data.images if i.name == 'Render Result']
                 r = r[0]
+                if len(r.render_slots)<tot:
+                    for i in range(tot-len(r.render_slots)):
+                        r.render_slots.new(name="Solt")
                 r.render_slots.active_index = 0
 
                 # 清空渲染槽名字
-                for solt in r.render_slots:
-                    solt.name = "Solt"  # 修改槽的名字
+                for i, solt in enumerate(r.render_slots):
+                    solt.name = f"Solt {i+1}"  # 修改槽的名字
 
                 progress = 0
                 step = 0
@@ -3009,13 +3018,16 @@ class CPBR_OT_BatchRender(Operator):
 
                 # 鼠标显示进度
                 wm = bpy.context.window_manager
-                tot = len(render_list)
+                
                 # wm.progress_begin(0, tot)
 
+                renderscenename=f"{render_list[0]['scene'].name}[{render_list[0]['layer'].name}] rending--(1/{tot})"
+                bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)#起始
+
                 for entry in render_list:
-                    i = step
-                    if step == 0:
-                        i = tot / 10  # 从10%开始显示
+                    # i = step
+                    # if step == 0:
+                    #     i = tot / 10  # 从10%开始显示
                     # wm.progress_update(i) 有bpy.ops.wm.redraw_timer后这个不显示了也用不着了
                     try:
                         r.render_slots.active_index = step # 每个场景切换一个渲染槽就行了
@@ -3025,7 +3037,7 @@ class CPBR_OT_BatchRender(Operator):
                     renderscenename=f"{entry['scene'].name}[{entry['layer'].name}] rending--({step+1}/{tot})"
 
                     progress += 1/tot
-                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
+                    # 不能方这里必须方最后不然渲染槽里不显示非当前场景的渲染结果bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
                     # 设置场景相机
                     bpy.data.scenes[entry['scene'].name].camera = entry['camera']
@@ -3036,8 +3048,10 @@ class CPBR_OT_BatchRender(Operator):
                     bpy.data.scenes[entry['scene'].name].world = entry['world']
 
                     # 可以在这里添加渲染逻辑或其他操作
-                    # r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
-                    bpy.context.view_layer.update()
+                    r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
+                    # bpy.context.view_layer.update()
+                    # bpy.data.images['Render Result'].update()
+                    bpy.data.images['Render Result'].render_slots.update()
 
                     ## 如果有启用合成就要把视图层节点里的bpy.data.scenes["sence2"].node_tree.nodes["Render Layers"].layer = 设置为对应的视图层才能保存成功，还要连接到输出节点
                     
@@ -3082,27 +3096,29 @@ class CPBR_OT_BatchRender(Operator):
                     #         node.layer = entry['layer'].name
 
                     bpy.ops.render.render(use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
+                    # 这里不能加'INVOKE_DEFAULT'
+                    # bpy.ops.render.render('INVOKE_DEFAULT',use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
                     if wm.WM_CPBR_Main_Props.auto_saverendertext:
                         renderfinishtime=datetime.now()
                         auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
 
-
-
                     step += 1
                     if step>total:step = 0
-
+                    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
                     #print(f"渲染：{entry['scene'].name} /// {entry['layer'].name}")
 
         except Exception as err:
             print('--CPBR_OT_BatchRender---', err, end=' | ')
+            print('Error on line {}'.format(sys.exc_info()[-1].tb_lineno))
 
         finally: #以确保在异常情况下正确恢复
             # wm.progress_end()
             progress=1
+            # context.scene.render.use_lock_interface = False #在渲染过程中锁定接口，以便为渲染器提供更多内存，这个本来就在渲染菜单里锁定界面，但似乎在'INVOKE_DEFAULT'这样渲染才有用
             CPBR_OT_BatchRender.running = False
             bpy.context.scene.CPBR_Main_Props.cp_batchrendering = False
             renderscenename=""
-
+            bpy.ops.render.view_show('INVOKE_DEFAULT')
         return {'FINISHED'}
 
 # #保存渲染记录auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'])
