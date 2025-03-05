@@ -1,13 +1,13 @@
 
 
 bl_info = {
-    "name" : "Dynamic Material Switcher",##instance material实例材质   Dynamic Material Switcher动态材质切换器 Material by N-Colors
+    "name" : "Dynamic Material Switcher只支持4.0及以上，节点组面板的问题",##instance material实例材质   Dynamic Material Switcher动态材质切换器 Material by N-Colors
     "author" : "CP-Design", 
     "description" : "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene).",
     "blender" : (4, 0, 0),
     "version" : (1, 0, 0),
     "location" : "Node Editor's N panel > Tool > Dynamic Material Switcher",
-    "warning" : "This plugin is for Blender 4.0+ !",
+    "warning" : "This plugin is for Blender version 4.0.0 or above!",
     "doc_url": "https://blendermarket.com/creators/cp-design", 
     "tracker_url": "", 
     "category" : "CP" 
@@ -138,10 +138,7 @@ class NODE_OT_Add_Prop_Attributenode_285D0(Operator):
             # bpy.context.area.type = prev_context
 
             colornode.name = 'CP Custom colors'
-            if bpy.context.preferences.view.language in ('zh_CN', 'zh_HANS'):
-                colornode.label = '同材质不同颜色'
-            else:
-                colornode.label = 'CP Custom colors'
+            colornode.label = 'CP Custom colors'
             colornode.attribute_type = 'OBJECT'
             colornode.attribute_name = 'CP Custom colors'
             colornode.width=125
@@ -163,10 +160,7 @@ class NODE_OT_Add_Prop_Attributenode_285D0(Operator):
             floatnode: bpy.types.ShaderNodeAttribute = nodes.new(bpy.types.ShaderNodeAttribute.__name__)
 
             floatnode.name = 'CP Custom float'
-            if bpy.context.preferences.view.language in ('zh_CN', 'zh_HANS'):
-                floatnode.label = '同材质不同浮点值'
-            else:
-                floatnode.label = 'CP Custom float'
+            floatnode.label = 'CP Custom float'
             floatnode.attribute_type = 'OBJECT'
             floatnode.attribute_name = 'CP Custom float'
             floatnode.width=125
@@ -423,14 +417,6 @@ class SNA_OT_SelectObjectsWithSameAttribute(Operator):
 
         return {'FINISHED'}
 
-# 全局缓存变量
-prev_active_mat = None
-prev_mat_users = 0
-cached_objects = []
-cached_alert_state = False
-cached_icon = 'ADD'
-cached_text = 'Add/Select Node'
-
 class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
     bl_label = 'Dynamic Material Switcher'
     bl_idname = 'SNA_PT_MATERIAL_BY_NCOLORS_85AF2'
@@ -477,7 +463,7 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
             layout = layout.box()
             if obj and obj.active_material and obj.active_material==bpy.context.material:
                 tex=iface_("Select all use [%s] objs") % (bpy.context.material.name)
-                op = layout.operator('object.select_linked', text=tex, icon='RESTRICT_SELECT_OFF', emboss=True, depress=False)
+                op = layout.operator('object.select_linked', text=tex, icon_value=256, emboss=True, depress=False)
                 op.type = 'MATERIAL'
 
             if obj and ("CP Custom colors" in obj or "CP Custom float" in obj):
@@ -485,12 +471,12 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
                 col=box_CCCCC.column(align=True, heading='', heading_ctxt='', translate=True)
                 col.label(text='Edit selected obj\'s prop', icon_value=get_icon_value("STICKY_UVS_LOC"))
                 row_D = col.row(heading='', align=False)
-                row_D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_colors_C1A81', text='', emboss=True)
+                row_D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_colors_C1A81', text='', icon_value=0, emboss=True)
                 op=row_D.operator('mnc.randomize_property', text='', icon_value=get_icon_value("MOD_NOISE"), emboss=True, depress=False)
                 op.prop_name="CP Custom colors"
 
                 row_E = col.row(heading='', align=False)
-                row_E.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_float_C0000', text='Float', emboss=True)
+                row_E.prop(bpy.context.scene.CPBR_Main_Props, 'edit_selected_objects_float_C0000', text='Float', icon_value=0, emboss=True)
                 op=row_E.operator('mnc.randomize_property', text='', icon_value=get_icon_value("MOD_NOISE"), emboss=True, depress=False)
                 op.prop_name="CP Custom float"
 
@@ -499,83 +485,32 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
                 co=box_9C21B.column(align=True, heading='', heading_ctxt='', translate=True)
                 co.label(text='Edit prop for objs matching active obj\'s prop value', icon_value=551)
                 row_3835D = co.row(heading='', align=False)
-                row_3835D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_color_as_active_object_B2B90', text='', emboss=True)
+                row_3835D.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_color_as_active_object_B2B90', text='', icon_value=0, emboss=True)
                 #row_3835D.label(text='选择和活动物体一样材质，并且属性的颜色一样的物体', icon_value=256)
-                row_3835D.operator('sna.select_same_attribute', text='', icon='RESTRICT_SELECT_OFF', emboss=True, depress=False)
+                row_3835D.operator('sna.select_same_attribute', text='', icon_value=256, emboss=True, depress=False)
 
-                co.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_float_as_active_object__C0000', text='Float', emboss=True)
-
-
-            # row = layout.row(heading='', align=True)
-            # row.scale_y = 1.0
-            # icon=get_icon_value("ADD")
-            # all_objects = bpy.context.scene.objects#bpy.data.objects
-            # objects_with_active_material = []
-            # for obj in all_objects:
-            #     if any(slot.material == bpy.context.material for slot in obj.material_slots):##bpy.context.material
-            #         objects_with_active_material.append(obj)
-            # tex='Add/Select Node'
-            # for obj in objects_with_active_material:
-            #     if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
-            #         row.alert = True
-            #         icon=get_icon_value("FILE_REFRESH")
-            #         row.scale_y = 2.0
-            #         tex='Add prop to objs using this material'#给使用该材质的物体添加属性
-            #         break  # 只要有一个满足条件就停止循环
-
-            # row.operator('wm.add_prop_and_attributenode_285d0', text=iface_(tex), icon_value=icon, emboss=True, depress=False)
+                co.prop(bpy.context.scene.CPBR_Main_Props, 'edit_same_float_as_active_object__C0000', text='Float', icon_value=0, emboss=True)
 
 
-            # 只有当材质或用户数变化时，才会进行资源密集型的遍历操作，从而提升性能
+            row = layout.row(heading='', align=True)
+            row.scale_y = 1.0
+            icon=get_icon_value("ADD")
+            all_objects = bpy.data.objects
+            objects_with_active_material = []
+            for obj in all_objects:
+                if any(slot.material == bpy.context.material for slot in obj.material_slots):##bpy.context.material
+                    objects_with_active_material.append(obj)
+            tex='Add/Select Node'
+            for obj in objects_with_active_material:
+                if "CP Custom colors" not in obj or 'CP Custom float' not in obj :
+                    row.alert = True
+                    icon=get_icon_value("FILE_REFRESH")
+                    row.scale_y = 2.0
+                    tex='Add prop to objs using this material'#给使用该材质的物体添加属性
+                    break  # 只要有一个满足条件就停止循环
 
-            global prev_active_mat, prev_mat_users, cached_objects, cached_alert_state, cached_icon, cached_text
-    
-            # 获取当前激活材质
-            current_mat = bpy.context.material
-            
-            # 当材质发生变化时强制刷新
-            if current_mat != prev_active_mat:
-                prev_active_mat = current_mat
-                prev_mat_users = getattr(current_mat, 'users', 0)
-                cached_objects = []
-                cached_alert_state = False
-            
-            # 当用户数变化时强制刷新
-            if current_mat and prev_mat_users != current_mat.users:
-                prev_mat_users = current_mat.users
-                cached_objects = []
-                cached_alert_state = False
-            
-            # 仅在需要时重新计算
-            if not cached_objects and current_mat:
-                # print("刷新材质")
-                # 新的对象收集逻辑
-                cached_objects = [
-                    obj for obj in bpy.context.scene.objects#bpy.data.objects 
-                    if any(slot.material == current_mat for slot in obj.material_slots)
-                ]
-                
-                # 新的警告状态检测
-                cached_alert_state = any(
-                    "CP Custom colors" not in obj or 
-                    'CP Custom float' not in obj 
-                    for obj in cached_objects
-                )
-                
-                # 更新显示内容
-                cached_icon = 'FILE_REFRESH' if cached_alert_state else 'ADD'
-                cached_text = 'Add prop to objs using this material' if cached_alert_state else 'Add/Select Node'
+            row.operator('wm.add_prop_and_attributenode_285d0', text=iface_(tex), icon_value=icon, emboss=True, depress=False)
 
-            # 绘制UI
-            row = layout.row(align=True)
-            row.alert = cached_alert_state
-            row.scale_y = 2.0 if cached_alert_state else 1.0
-            row.operator(
-                'wm.add_prop_and_attributenode_285d0',
-                text=iface_(cached_text),
-                icon_value=get_icon_value(cached_icon),
-                emboss=True
-            )
 
         scenes = bpy.data.scenes
         viewlayers = context.scene.view_layers
@@ -587,11 +522,11 @@ class SNA_PT_MATERIAL_BY_NCOLORS_85AF2(Panel):
         pan=True
         if bpy.app.version >= (4, 1):
             header, pan = layout.panel("my_panel_b", default_closed=False)#bl4.1
-            header.label(text="Material by N-Viewlayers(Scene)",icon_value=get_icon_value("RENDER_RESULT"))
+            header.label(text="Material by N-Viewlayer(Scene)",icon_value=get_icon_value("RENDER_RESULT"))
         else:
             r = layout.row(heading='', align=False)
             r.alignment = 'CENTER'.upper()
-            r.label(text="Material by N-Viewlayers(Scene)")
+            r.label(text="Material by N-Viewlayer(Scene)")
         if pan:
             box = layout.box()
             row = box.row(heading='', align=False)
@@ -1189,7 +1124,7 @@ def check_propnode(nodes):
 
 '''
 class SNA_PT_MATERIAL_BY_Nviewlayer_85AF2(Panel):
-    bl_label = 'Material by N-Viewlayers(Scene)'
+    bl_label = 'Material by N-Viewlayer(Scene)'
     bl_idname = 'SNA_PT_MATERIAL_BY_Nviewlayer_85AF2'
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
@@ -2313,51 +2248,50 @@ class CPBR_PT_UIListPanel(Panel):
         #prefs = get_prefs()
         layout = self.layout
         wm = context.window_manager
+        props = wm.WM_CPBR_Main_Props
         col = layout.column(heading="", align=True)
 
         r = col.row(heading='Viewlayers List:', align=True)
         #col.label(text='Viewlayer(Scenes) List')
-        if wm.WM_CPBR_Main_Props.show_all_preview:
-            r.prop(wm.WM_CPBR_Main_Props, "scale_preview", text="Scale")
-        r.prop(wm.WM_CPBR_Main_Props, "show_all_preview",icon='SEQ_PREVIEW', text="")
+        if props.show_all_preview:
+            r.prop(props, "scale_preview", text="Scale")
+        r.prop(props, "show_all_preview",icon='SEQ_PREVIEW', text="")
 
         r.separator(factor=1.0)
 
         # col.template_list("CPBR_UL_scenes_list", "", bpy.data, "scenes", context.scene.CPBR_Main_Props, "cp_change_active_scene_index")
-        col.template_list("CPBR_UL_scenes_list", "", bpy.data, "scenes", wm.WM_CPBR_Main_Props, "cp_change_active_scene_index",rows=len(bpy.data.scenes))
+        col.template_list("CPBR_UL_scenes_list", "", bpy.data, "scenes", props, "cp_change_active_scene_index",rows=len(bpy.data.scenes))
 
 
         rowpath = layout.row(heading='', align=True)
         rp = rowpath.row(heading='', align=True)
-        use_blendpath=wm.WM_CPBR_Main_Props.use_auto_blenderpath
+        use_blendpath=props.use_auto_blenderpath
         # rp.active = use_blendpath  
-        rp.prop(wm.WM_CPBR_Main_Props, "use_auto_blenderpath",text="Save to BL file`s directory")
+        rp.prop(props, "use_auto_blenderpath",text="Save to BL file`s directory")
 
         blendPath = str(bpy.path.abspath('//'))  #返回相对于当前混合文件的绝对路径
         blendPath += os.path.splitext(bpy.path.basename(bpy.context.blend_data.filepath))[0]#去除.blend后缀的名字
         ro = rowpath.row(heading='', align=True)
-        ro.prop(wm.WM_CPBR_Main_Props, "auto_saverendertext")
-        ro.operator("wm.path_open", text="",icon = 'FILE_FOLDER').filepath = blendPath if use_blendpath else wm.WM_CPBR_Main_Props.directory
+        ro.prop(props, "auto_saverendertext")
+        ro.operator("wm.path_open", text="",icon = 'FILE_FOLDER').filepath = blendPath if use_blendpath else props.directory
         if not use_blendpath:
-            layout.prop(wm.WM_CPBR_Main_Props, "directory", text="")
+            layout.prop(props, "directory", text="")
 
-        global bugmes,progress,renderscenename
-        if CPBR_OT_BatchRender.running:
-            text=renderscenename
-            # layout.label(text=text, icon_value=0)
-            layout.progress(
-                    factor=progress,
-                    type="BAR",
-                    text=renderscenename
-                )
-
-        # layout.prop(context.scene.render, "use_lock_interface")这个本来就在渲染菜单里锁定界面，但似乎在'INVOKE_DEFAULT'这样渲染才有用
-
-        # layout.template_running_jobs()## bpy.ops.render.render('INVOKE_DEFAULT'这样渲染才有用
+        if props.is_rendering:
+            # 显示进度条和停止按钮
+            row = layout.row(align=True)
+            row.progress(
+                factor=props.progress,
+                type="BAR",
+                text=props.current_render_info
+            )
+            row.operator("cpbr.stop_batch_render", 
+                        text="", 
+                        icon='CANCEL')
 
         row = layout.row(heading='', align=True)
         row.scale_y = 2.5
-        row.enabled=not CPBR_OT_BatchRender.running
+        row.enabled=not props.is_rendering
         row.operator("cpbr.batch_render", icon='RENDER_STILL',)
         
         if bugmes:
@@ -2451,6 +2385,18 @@ class CPBR_OT_SwitchSceneViewLayer(Operator):
                         break
         return {'FINISHED'}
 
+class CPBR_OT_StopBatchRender(Operator):
+    bl_idname = "cpbr.stop_batch_render"
+    bl_label = "Stop Batch Render"
+    bl_description = "Stop current batch rendering process"
+
+    def execute(self, context):
+        wm = context.window_manager
+        props = wm.WM_CPBR_Main_Props
+        props.should_cancel = True
+        self.report({'INFO'}, "Batch render cancellation requested")
+        return {'FINISHED'}
+
 renderscenename=""
 
 render_list = []
@@ -2471,6 +2417,7 @@ def update_ui():
 
 bugmes=''
 # 待参考插件 https://github.com/BlenderHQ/multiple_camera_render/tree/26b71cab04210fa14b6441bf638aa9b66ee9eb35
+'''
 class CPBR_OT_BatchRender(Operator):
     bl_idname = "cpbr.batch_render"
     bl_label = "Batch Render"
@@ -3090,8 +3037,6 @@ class CPBR_OT_BatchRender(Operator):
                 bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)#起始
 
                 for entry in render_list:
-
-                    ##在这里用一个布尔来中止渲染？？？
                     # i = step
                     # if step == 0:
                     #     i = tot / 10  # 从10%开始显示
@@ -3146,8 +3091,7 @@ class CPBR_OT_BatchRender(Operator):
                         projectName = cleanblendName + '/'        
 
                     now = datetime.now()
-                    foldname=(projectName + entry['scene'].name  + '_'+ entry['layer'].name  + '_'+ now.strftime('%Y%m%d_%H-%M-%S'))#
-                    base_path = path / foldname
+                    base_path = path / (projectName + entry['scene'].name  + '_'+ entry['layer'].name  + '_'+ now.strftime('%Y%m%d_%H-%M-%S'))#
                     
                     bpy.data.scenes[entry['scene'].name].render.filepath = str(base_path)
                     if bpy.data.scenes[entry['scene'].name].use_nodes:
@@ -3168,7 +3112,7 @@ class CPBR_OT_BatchRender(Operator):
                     # bpy.ops.render.render('INVOKE_DEFAULT',use_viewport=False, write_still=False, layer=entry['layer'].name, scene=entry['scene'].name)
                     if wm.WM_CPBR_Main_Props.auto_saverendertext:
                         renderfinishtime=datetime.now()
-                        auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime,foldname)
+                        auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime)
 
                     step += 1
                     if step>total:step = 0
@@ -3188,6 +3132,327 @@ class CPBR_OT_BatchRender(Operator):
             renderscenename=""
             bpy.ops.render.view_show('INVOKE_DEFAULT')
         return {'FINISHED'}
+'''
+class CPBR_OT_BatchRender(Operator):
+    bl_idname = "cpbr.batch_render"
+    bl_label = "Batch Render"
+    bl_description = "Batch renders the selected scenes and view layers"
+
+    # 类属性用于跟踪渲染状态
+    _timer = None
+    _render_engine = []
+    _render_list = []
+    _current_step = 0
+
+    def precheck_scenes(self, context):
+        """验证所有场景设置是否正确"""
+        scenes = bpy.data.scenes
+        error_messages = []
+
+        # 文件保存检查
+        if not bpy.data.is_saved:
+            error_messages.append("Please save the file before render!")
+            return error_messages
+
+        # 相机和世界环境检查
+        for scene in scenes:
+            if not scene.CPBR_Main_Props.cp_render_scene:
+                continue
+
+            # 相机检查
+            if scene.CPBR_Main_Props.cp_use_scene_camera:
+                if scene.camera is None:
+                    error_messages.append(f"{scene.name} has no scene camera!")
+            else:
+                for layer in scene.view_layers:
+                    if not layer.get("CPBatchRender Viewlayers render_camera"):
+                        error_messages.append(
+                            f"{scene.name}({layer.name}) has no camera setup!")
+
+            # 世界环境检查
+            if scene.CPBR_Main_Props.cp_use_scene_world:
+                if scene.world is None:
+                    error_messages.append(f"{scene.name} has no world setup!")
+            else:
+                for layer in scene.view_layers:
+                    if not layer.get("CPBatchRender Viewlayers render_world"):
+                        error_messages.append(
+                            f"{scene.name}({layer.name}) has no world setup!")
+
+        return error_messages
+
+    def build_render_list(self, scenes):
+        """构建渲染任务列表"""
+        render_list = []
+        for scene in scenes:
+            if not scene.CPBR_Main_Props.cp_render_scene:
+                continue
+
+            for layer in scene.view_layers:
+                if not layer.use:
+                    continue
+
+                # 获取相机设置
+                if scene.CPBR_Main_Props.cp_use_scene_camera:
+                    camera = scene.camera
+                else:
+                    camera_name = layer["CPBatchRender Viewlayers render_camera"].name
+                    camera = scene.objects.get(camera_name)
+
+                # 获取分辨率设置
+                if scene.CPBR_Main_Props.cp_use_scene_resolution:
+                    res_x, res_y = scene.render.resolution_x, scene.render.resolution_y
+                else:
+                    res_x, res_y = layer["CPBatchRender Viewlayers render_resolution"]
+
+                # 获取世界环境设置
+                if scene.CPBR_Main_Props.cp_use_scene_world:
+                    world = scene.world
+                else:
+                    world = layer["CPBatchRender Viewlayers render_world"]
+
+                if all([camera, world, res_x, res_y]):
+                    render_list.append({
+                        'scene': scene,
+                        'layer': layer,
+                        'camera': camera,
+                        'res_x': res_x,
+                        'res_y': res_y,
+                        'world': world,
+                    })
+
+        return render_list
+
+    def validate_compositor(self, render_list):
+        """验证合成器设置"""
+        scene_errors = {}
+        for entry in render_list:
+            scene = entry['scene']
+            if not scene.use_nodes:
+                scene_errors.setdefault(scene.name, []).append(
+                    "Compositor nodes not enabled")
+                continue
+
+            has_render_layer = False
+            has_output = False
+            for node in scene.node_tree.nodes:
+                if node.type == 'R_LAYERS':
+                    has_render_layer = True
+                if node.type == 'OUTPUT_FILE' and not node.mute:
+                    has_output = any(input.is_linked for input in node.inputs)
+
+            errors = []
+            if not has_render_layer:
+                errors.append("Missing Render Layers node")
+            if not has_output:
+                errors.append("No active output node")
+
+            if errors:
+                scene_errors[scene.name] = errors
+
+        return scene_errors
+
+    def invoke(self, context, event):
+
+        # 检查是否已保存文件
+        if not bpy.data.is_saved:
+            self.report({'ERROR'}, "Please save the file before render!")
+            bugmes = 'Please save the file before render!'
+            return {'CANCELLED'}  # 取消操作
+            
+        wm = context.window_manager
+        props = wm.WM_CPBR_Main_Props
+
+        # 初始化渲染属性
+        props.is_rendering = False
+        props.should_cancel = False
+        props.progress = 0.0
+        props.current_render_info = ""
+
+        # 执行预检查
+        if error_messages := self.precheck_scenes(context):
+            self.report({'ERROR'}, "\n".join(error_messages))
+            return {'CANCELLED'}
+
+        # 构建渲染列表
+        self._render_list = self.build_render_list(bpy.data.scenes)
+        if not self._render_list:
+            self.report({'WARNING'}, "No valid render tasks found")
+            return {'CANCELLED'}
+
+        # 验证合成器设置
+        if compositor_errors := self.validate_compositor(self._render_list):
+            error_msg = "Compositor issues:\n" + \
+                "\n".join([f"{scene}: {', '.join(errs)}" for scene, errs in compositor_errors.items()])
+            self.report({'ERROR'}, error_msg)
+            return {'CANCELLED'}
+
+        # 检查渲染引擎一致性
+        engines = {entry['scene'].render.engine for entry in self._render_list}
+        if len(engines) > 1:
+            return wm.invoke_props_dialog(self, width=400)
+
+        # 准备开始渲染
+        self._prepare_render_environment(context)
+        return self.execute(context)
+
+    def _prepare_render_environment(self, context):
+        """准备渲染环境"""
+        # 切换到实体模式
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D' and area.spaces[0].shading.type != 'SOLID':
+                area.spaces[0].shading.type = 'SOLID'
+
+        # 自动保存文件
+        if bpy.data.is_saved:
+            bpy.ops.wm.save_mainfile()
+
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            wm = context.window_manager
+            props = wm.WM_CPBR_Main_Props
+
+            if props.should_cancel or self._current_step >= len(self._render_list):
+                self._cleanup(context)
+                return {'FINISHED'}
+
+            bpy.context.scene.CPBR_Main_Props.cp_batchrendering = True
+            self._render_current_step(context)
+            self._current_step += 1
+            props.progress = self._current_step / len(self._render_list)
+
+        return {'PASS_THROUGH'}
+
+    def execute(self, context):
+        wm = context.window_manager
+        props = wm.WM_CPBR_Main_Props
+
+        props.is_rendering = True
+        self._current_step = 0
+        self._timer = wm.event_timer_add(0.1, window=context.window)
+
+        wm.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
+
+    def _render_current_step(self, context):
+        entry = self._render_list[self._current_step]
+        wm = context.window_manager
+        props = wm.WM_CPBR_Main_Props
+
+        try:
+            # 更新UI显示信息
+            props.current_render_info = (
+                f"{entry['scene'].name} - {entry['layer'].name} "
+                f"({self._current_step+1}/{len(self._render_list)})"
+            )
+
+            # 设置渲染参数
+            scene = entry['scene']
+            scene.camera = entry['camera']
+            scene.render.resolution_x = entry['res_x']
+            scene.render.resolution_y = entry['res_y']
+            scene.world = entry['world']
+
+            # 设置输出路径
+            base_path,foldname = self._setup_output_path(scene,entry['layer'].name, entry,props)
+            now = datetime.now()
+
+            # 查找名为 'Render Result' 的图像
+            r = [i for i in bpy.data.images if i.name == 'Render Result'][0]
+            for i, solt in enumerate(r.render_slots):
+                solt.name = f"Solt"  # 修改槽的名字
+            # 查找第一个空的渲染槽
+            empty_slot = None
+            for i, slot in enumerate(r.render_slots):
+                if slot.name.startswith("Solt"):
+                # if not slot.is_rendered:没这个属性
+                    empty_slot = i
+                    break
+            # 如果没有找到空的渲染槽，则新建一个
+            if empty_slot is None:
+                empty_slot = len(r.render_slots)
+                r.render_slots.new(name=f"Solt {empty_slot + 1}")
+            # 设置活动槽为第一个空的槽
+            r.render_slots.active_index = empty_slot
+            r.render_slots[(int(r.render_slots.active_index))].name = entry['scene'].name + "-" + entry['layer'].name  # 修改槽的名字
+            
+            bpy.data.images['Render Result'].render_slots.update()
+
+
+            # 执行渲染
+            bpy.ops.render.render(
+                write_still=False,
+                layer=entry['layer'].name,
+                scene=scene.name
+            )
+            bpy.data.images['Render Result'].render_slots.update()
+            if props.auto_saverendertext:
+                renderfinishtime=datetime.now()
+                auto_saverendertext(base_path,scene,entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'],now,renderfinishtime,foldname)
+        except Exception as e:
+            self.report({'ERROR'}, f"Render failed: {str(e)}")
+            self._cleanup(context)
+
+    def _setup_output_path(self, scene,layername, entry,props):
+        """配置输出路径"""
+        # if bpy.data.is_saved:
+        #     blend_path = Path(bpy.path.abspath('//'))
+        #     timestamp = datetime.now().strftime('%Y%m%d_%H-%M-%S')
+        #     output_path = blend_path / f"{scene.name}_{entry['layer'].name}_{timestamp}"
+        #     scene.render.filepath = str(output_path)
+
+        if props.use_auto_blenderpath:  # 保存到blend文件同目录下
+            path = Path(bpy.path.abspath('//'))  # 保存到当前blender文件目录,此行定义的是base_path = path / (pr后面的path, //就代表blender文件路径
+        else:  # 自定义目录
+            path = Path(props.directory)
+        # 工程路径和blender文件名
+        blendPath = bpy.context.blend_data.filepath
+        blendName = bpy.path.basename(blendPath)
+        #blendName = blendName.replace(" ", "")#替换所有空格
+        #print("blendName",blendName)
+        # 项目名称，'/'和'_'切换可以文件和场景名建立文件夹管理
+        projectName = '未保存/'
+        if  blendPath!= '':
+            noblendname=os.path.splitext(blendName)[0]#去除.blend后缀的名字
+            cleanblendName = noblendname.strip()#strip是Python中用于字符串处理的方法之一，去除字符串开头和结尾的空白字符（空格、制表符、换行符等
+            #print("cleanblendName:::::::::",cleanblendName)
+            projectName = cleanblendName + '/'        
+
+        now = datetime.now()
+        foldname=(projectName + scene.name  + '_'+ layername  + '_'+ now.strftime('%Y%m%d_%H-%M-%S'))
+        base_path = path / foldname#
+        
+        scene.render.filepath = str(base_path)
+        if scene.use_nodes:
+            for node in scene.node_tree.nodes:
+                if node.type == "OUTPUT_FILE":
+                    node.base_path = str(base_path)
+                    #node.base_path = str(base_path / node.name)
+        
+        return base_path,foldname
+
+
+    def _cleanup(self, context):
+        """清理操作"""
+        wm = context.window_manager
+        props = wm.WM_CPBR_Main_Props
+
+        if self._timer:
+            wm.event_timer_remove(self._timer)
+        
+        props.is_rendering = False
+        props.should_cancel = False
+        props.progress = 0.0
+        props.current_render_info = ""
+        
+        # 恢复原始设置
+        context.scene.CPBR_Main_Props.cp_batchrendering = False
+        bpy.ops.render.view_show('INVOKE_DEFAULT')
+
+    def cancel(self, context):
+        self._cleanup(context)
+        self.report({'INFO'}, "Batch render cancelled")
+
 
 # #保存渲染记录auto_saverendertext(base_path,entry['scene'],entry['layer'],entry['camera'],entry['world'],entry['res_x'],entry['res_y'])
 def auto_saverendertext(filepath, scene, view_layer, camera, world, x, y, strattime, renderfinishtime,foldname):
@@ -3796,6 +4061,11 @@ class WM_Materialby_N_Colors_props(PropertyGroup):
     scale_preview: FloatProperty(name="Thumbnails scale",description="Thumbnails scale",default=5.0, unit='NONE', min=1.0)
     show_all_preview: BoolProperty(name="Show all thumbnails",description="",default=False)
 
+    is_rendering: BoolProperty(default=False)
+    should_cancel: BoolProperty(default=False)
+    progress: bpy.props.FloatProperty(default=0.0)
+    current_render_info: bpy.props.StringProperty(default="")
+
 # class Materialby_N_Colors_AddonPreferences_9F6AA(bpy.types.AddonPreferences):
     #     bl_idname = __package__
 
@@ -3824,20 +4094,18 @@ class TranslationHelper():
         bpy.app.translations.unregister(self.name)
 
 zhdata = {
-
     # ----------------------------------------------------根据物体不同自动切换属性值---------------------------------------------------- #
     "Control materials by adding properties to objects/view layers,enabling the same material to automatically switch to different effects based on the object or view layer(scene).": 
     '通过给物体/视图层添加属性来控制材质,实现同一个材质根据物体或视图层(场景)自动切换不同的效果.',
     'Dynamic Material Switcher': '动态材质切换器',
     'Material by N-Objects': '根据物体切换材质',
-    'This plugin is for Blender 4.0+ !': '只支持4.0及以上，因为节点组面板API',
     
     'Select all use [%s] objs': '"选中所有使用 [%s] 材质的物体"',
     'Edit prop for objs matching active obj\'s prop value': '设置与活动物体属性值相等的物体属性',
     'Edit selected obj\'s prop': '设置选中物的属性',
     'Add prop to objs using this material': '有使用该材质的物体缺失属性!',#有使用该材质的物体缺失属性
     'Add/Select Node': '添加/选中属性切换节点',
-    'Material by N-Viewlayers(Scene)': '根据视图层(场景)切换材质',
+    'Material by N-Viewlayer(Scene)': '根据视图层(场景)切换材质',
     'Add node/Refresh node/Add property to viewlayer': '添加节点/刷新节点/给视图层添加属性',
     'There are multiple nodetrees with \"Viewlayer Group\" properties.they will all be automatically refreshed. Change properties of nodetrees that do not need automatic refreshing to \"Default\"': '有多个Viewlayer Group属性的节点树,它们都会被自动刷新,把不用自动刷新的节点树属性改为默认',
 
@@ -3887,7 +4155,7 @@ zhdata = {
     'Displays thumbnails of all view layers for that scene': '显示该场景的所有视图层缩略图',
 }
 
-CPBRender_zh_HANS = TranslationHelper(__package__, zhdata, lang='zh_HANS')
+CPBRender_zh_HANS = TranslationHelper('CPBRender', zhdata, lang='zh_HANS')
 
 classes = (
     NODE_OT_Add_Prop_Attributenode_285D0,
@@ -3908,6 +4176,7 @@ classes = (
     CPBR_UL_scenes_list,
     CPBR_PT_UIListPanel,
     CPBR_OT_SwitchSceneViewLayer,
+    CPBR_OT_StopBatchRender,
     CPBR_OT_BatchRender,
     CPBR_OT_RenderViewport,
     WM_Materialby_N_Colors_props,
