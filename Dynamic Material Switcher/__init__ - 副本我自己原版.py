@@ -3887,7 +3887,7 @@ zhdata = {
     'Displays thumbnails of all view layers for that scene': '显示该场景的所有视图层缩略图',
 }
 
-CPBRender_zh_HANS = TranslationHelper(__package__, zhdata, lang='zh_HANS')
+CPBRender_zh_HANS = TranslationHelper("CPBRender_zh_HANS", zhdata, lang='zh_HANS')
 
 classes = (
     NODE_OT_Add_Prop_Attributenode_285D0,
